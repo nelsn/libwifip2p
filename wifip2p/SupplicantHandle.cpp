@@ -21,9 +21,4 @@ namespace wifip2p {
 		wpa_ctrl_close((struct wpa_ctrl*)_handle);
 	}
 
-	//niewue
-	bool ctrlAttach(std::string s) {
-		_handle = wpa_ctrl_attach(s);
-	}
-
 } /* namespace wifip2p */
