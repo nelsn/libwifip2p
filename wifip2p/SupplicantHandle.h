@@ -9,21 +9,24 @@
 #define SUPPLICANTHANDLE_H_
 
 //niewue
-#include <string>
+#include <iostream>
+//#include <string>
 
 
 namespace wifip2p {
 
 	class SupplicantHandle {
+
+	private:
+		void *_handle;
+
 	public:
 		SupplicantHandle(const char *ctrl_path);
 		virtual ~SupplicantHandle();
 
 		//niewue
-		bool ctrlAttach(std::string s);
+		//int wpa_ctrl_attach(*_handle);
 
-	private:
-		void *_handle;
 	};
 
 } /* namespace wifip2p */

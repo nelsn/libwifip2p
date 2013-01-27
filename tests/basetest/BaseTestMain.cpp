@@ -1,12 +1,33 @@
 #include "wifip2p/SupplicantHandle.h"
 
 int main() {
-	wifip2p::SupplicantHandle handle("/var/run/wpa_supplicant");
 
-	handle.ctrlAttach("/var/run/wpa_supplicant");
-/*
- * TODO qredqe
- */
+	//wifip2p::SupplicantHandle handle("/var/run/wpa_supplicant");
+
+	/*
+	 * Was genau geschieht hier? Der Scope-Operator macht Inhalte des
+	 *  Namensraumes 'wifip2p' zugreifbar. Hier das Objekt SupplicantHandle.
+	 *  Das Objekt wird dann aber _nicht_ über den Konstruktor instanziiert,
+	 *  sondern einfach benannt und nach einem Leerzeichen die Objekt-
+	 *  variable _handle -- ohne vorangestelltem Unterstrich -- wie eine
+	 *  Methode, mit Parameter-Übergabe in Klammern, "aufgerufen".
+	 *
+	 *  Was ist das für ein Konstrukt?
+	 *
+	 * Sinnigerweise nimmt man das offenbar syntaktische Equivalent, das
+	 *  gemäß den üblichen Gepflogenheiten erscheint. >>
+	 *
+	 */
+
+	wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
+
+	/*
+	 * To test implemented functions enter the code here. The actual
+	 *  testing should take place by running Johannes' make -check script,
+	 *  as he has described in his e-mail regarding libwifip2p.
+	 */
+
+
 	std::cout << "blabla" << std::endl;
 
 	return 0;
