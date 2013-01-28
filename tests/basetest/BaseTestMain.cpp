@@ -1,10 +1,12 @@
 #include "wifip2p/SupplicantHandle.h"
 
+
+using namespace std;
+
 int main() {
 
-	//wifip2p::SupplicantHandle handle("/var/run/wpa_supplicant");
-
-	/*
+	/* >> wifip2p::SupplicantHandle handle("/var/run/wpa_supplicant");
+	 *
 	 * Was genau geschieht hier? Der Scope-Operator macht Inhalte des
 	 *  Namensraumes 'wifip2p' zugreifbar. Hier das Objekt SupplicantHandle.
 	 *  Das Objekt wird dann aber _nicht_ über den Konstruktor instanziiert,
@@ -16,10 +18,15 @@ int main() {
 	 *
 	 * Sinnigerweise nimmt man das offenbar syntaktische Equivalent, das
 	 *  gemäß den üblichen Gepflogenheiten erscheint. >>
-	 *
 	 */
 
-	wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
+	wifip2p::SupplicantHandle wpasup("/var/run/wpa_supplicant");
+/*
+	wifip2p::SupplicantHandle *wpasup;
+
+	*wpasup = new wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
+*/
+	//wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
 
 	/*
 	 * To test implemented functions enter the code here. The actual
@@ -27,8 +34,25 @@ int main() {
 	 *  as he has described in his e-mail regarding libwifip2p.
 	 */
 
+	//wpasup.funcTest();
 
-	std::cout << "blabla" << std::endl;
+	bool running = true;
+
+	while (running) {
+
+		bool quit = 0;
+
+		cin >> quit;
+
+		if (quit)
+			running = false;
+
+		wpasup.funcTest();
+
+
+	}
+
+	cout << "blabla" << endl;
 
 	return 0;
 }

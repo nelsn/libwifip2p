@@ -10,22 +10,33 @@
 
 //niewue
 #include <iostream>
-//#include <string>
 
 
 namespace wifip2p {
 
 	class SupplicantHandle {
 
-	private:
-		void *_handle;
+		public:
+			SupplicantHandle(const char *ctrl_path);
+			virtual ~SupplicantHandle();
 
-	public:
-		SupplicantHandle(const char *ctrl_path);
-		virtual ~SupplicantHandle();
+			//niewue
+			void funcTest();
 
-		//niewue
-		//int wpa_ctrl_attach(*_handle);
+
+		private:
+			/*
+			 * void* _handle represents a generic pointer,
+			 *  that is, a pointer which may point at memory
+			 *  of any variables' type as long as it is not
+			 *  defined as either 'const' or 'volatile'.
+			 *  In that sense, one may call it an unspecified
+			 *  pointer.
+			 */
+			void *_handle;
+
+			//niewue
+			//int wpa_ctrl_attach(_handle);
 
 	};
 

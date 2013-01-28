@@ -7,18 +7,34 @@
 
 #include "wifip2p/SupplicantHandle.h"
 
-#include <stdlib.h>
-#include <stdint.h>
+//#include <stdlib.h>
+//#include <stdint.h>
 #include "common/wpa_ctrl.h"
 
 namespace wifip2p {
 
 	SupplicantHandle::SupplicantHandle(const char *ctrl_path) {
+
+		/*
+		 * Here, _handle is defined to represent the now opened
+		 *  control_i/f expected from the ctrl_path parameter.
+		 *  E.g. when instantiated with the parameter /var/run/
+		 *  wpa_supplicant the WPASUP ctrl_i/f is now referenced
+		 *  by _handle.
+		 */
 		_handle = wpa_ctrl_open(ctrl_path);
+
 	}
 
 	SupplicantHandle::~SupplicantHandle() {
+
+		/*
+		 * _handle is going to be dereferenced, i.e., the function
+		 *  wpa_ctrl_close gets handed over the actual control_i/f
+		 *  refeenced by _handle.
+		 */
 		wpa_ctrl_close((struct wpa_ctrl*)_handle);
+
 	}
 
 
@@ -40,9 +56,13 @@ namespace wifip2p {
 	 *  used by handing over the _handle, which represents the address
 	 *  of the socket connection.
 	 */
-	/*int wpa_ctrl_attach(_handle) {
+	/*int wpa_ctrl_attach(SupplicantHandle::_handle) {
 		return 1;
 	}*/
+
+	void SupplicantHandle::funcTest() {
+		;
+	}
 
 
 } /* namespace wifip2p */
