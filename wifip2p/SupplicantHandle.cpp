@@ -3,12 +3,15 @@
  *
  *  Created on: 12.12.2012
  *      Author: morgenro
+ *      		niels_w
  */
 
 #include "wifip2p/SupplicantHandle.h"
 
 //#include <stdlib.h>
 //#include <stdint.h>
+#include <cstdlib>
+#include <iostream>
 #include "common/wpa_ctrl.h"
 
 namespace wifip2p {
@@ -24,6 +27,9 @@ namespace wifip2p {
 		 */
 		_handle = wpa_ctrl_open(ctrl_path);
 
+		if (_handle == NULL)
+			std::cout << "NO WPASUP." << std::endl;
+
 	}
 
 	SupplicantHandle::~SupplicantHandle() {
@@ -31,7 +37,7 @@ namespace wifip2p {
 		/*
 		 * _handle is going to be dereferenced, i.e., the function
 		 *  wpa_ctrl_close gets handed over the actual control_i/f
-		 *  refeenced by _handle.
+		 *  referenced by _handle.
 		 */
 		wpa_ctrl_close((struct wpa_ctrl*)_handle);
 
@@ -59,6 +65,37 @@ namespace wifip2p {
 	/*int wpa_ctrl_attach(SupplicantHandle::_handle) {
 		return 1;
 	}*/
+
+
+	static void hostapd_cli_msg_cb(char *msg, size_t len)
+	{
+		std::cout << msg << std::endl;
+	}
+
+	bool SupplicantHandle::findPeer() {
+
+		char *resp = NULL;
+		size_t resp_len = 0;
+
+		try {
+			resp = new char[64];
+
+			wpa_ctrl_request((struct wpa_ctrl*)_handle, "p2p_find", 8, resp, &resp_len, NULL);
+
+			wpa_ctrl_request((struct wpa_ctrl*)_handle, "p2p_find", 8, resp, &resp_len, hostapd_cli_msg_cb);
+					//How to handle this last msg-callback thing?
+
+			delete[] resp;
+
+			return true;
+
+		} catch (std::bad_alloc &e) {
+			//TODO: Exception handling
+		}
+
+		return true;
+
+	}
 
 	void SupplicantHandle::funcTest() {
 		;
