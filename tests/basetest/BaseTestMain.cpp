@@ -20,13 +20,18 @@ int main() {
 	 *  gemäß den üblichen Gepflogenheiten erscheint. >>
 	 */
 
-	wifip2p::SupplicantHandle wpasup("/var/run/wpa_supplicant");
-/*
-	wifip2p::SupplicantHandle *wpasup;
+	std::cout << "Blabla." << std::endl;
 
-	*wpasup = new wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
-*/
-	//wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
+	// Constructed at STACK >>
+	wifip2p::SupplicantHandle wpasup("/var/run/wpa_supplicant/wlan0");
+
+
+	/* Constructed at HEAP >>
+	 *
+	 *	wifip2p::SupplicantHandle *wpasup;
+	 *	wpasup = new wifip2p::SupplicantHandle("/var/run/wpa_supplicant");
+	 *
+	 */
 
 	/*
 	 * To test implemented functions enter the code here. The actual
@@ -34,9 +39,15 @@ int main() {
 	 *  as he has described in his e-mail regarding libwifip2p.
 	 */
 
-	//wpasup.funcTest();
-
 	bool running = true;
+
+
+	/* STATEMACHINE IMPLEMENTATION (take a look at network prot. impl.)
+	 * Implementing a kind of a state machine within a loop.
+	 * 	One state machine per TX/RX? That will lead to the necessity of
+	 * 	multithreading, though. Probably not the best idea, regarding
+	 * 	my goal to lower implementation complexity.
+	 */
 
 	while (running) {
 
