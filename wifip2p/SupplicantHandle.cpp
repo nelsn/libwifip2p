@@ -16,7 +16,7 @@
 
 namespace wifip2p {
 
-	SupplicantHandle::SupplicantHandle(const char *ctrl_path) {
+	SupplicantHandle::SupplicantHandle(const char *ctrl_path) throw (SupplicantHandleException) {
 
 		/*
 		 * Here, _handle is defined to represent the now opened
@@ -28,8 +28,7 @@ namespace wifip2p {
 		_handle = wpa_ctrl_open(ctrl_path);
 
 		if (_handle == NULL)
-			std::cout << "NO WPASUP." << std::endl;
-
+			throw SupplicantHandleException("connection to wpa supplicant failed");
 	}
 
 	SupplicantHandle::~SupplicantHandle() {
@@ -97,8 +96,24 @@ namespace wifip2p {
 
 	}
 
-	void SupplicantHandle::funcTest() {
-		;
+	void SupplicantHandle::funcTest() throw (SupplicantHandleException) {
+		char replybuf[64];
+
+		// initialize the reply_len with the available buffer size
+		size_t reply_len = sizeof(replybuf) - 1;
+
+		// Send out a PING request. A wpa supplicant should answer with a PONG.
+		int ret = wpa_ctrl_request((struct wpa_ctrl*)_handle, "PING", 4, *&replybuf, &reply_len, NULL);
+
+		// check for call errors
+		if (ret != 0)
+			throw SupplicantHandleException("PING request failed");
+
+		// convert reply to a std::string
+		std::string reply(replybuf, reply_len);
+
+		if (reply.substr(0,4) != "PONG")
+			throw SupplicantHandleException("WPASUPP did not reply to PING");
 	}
 
 

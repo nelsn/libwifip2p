@@ -15,14 +15,30 @@
 
 namespace wifip2p {
 
+	class SupplicantHandleException : public std::exception {
+	public:
+		SupplicantHandleException(const std::string &what) : _what(what) {
+		}
+
+		~SupplicantHandleException() throw () {
+		}
+
+		std::string what() {
+			return _what;
+		}
+
+	private:
+		const std::string _what;
+	};
+
 	class SupplicantHandle {
 
 		public:
-			SupplicantHandle(const char *ctrl_path);
+			SupplicantHandle(const char *ctrl_path) throw (SupplicantHandleException);
 			virtual ~SupplicantHandle();
 
 			//niewue
-			void funcTest();
+			void funcTest() throw (SupplicantHandleException);
 
 
 		private:
