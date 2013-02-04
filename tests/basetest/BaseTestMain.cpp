@@ -20,6 +20,7 @@ int main() {
 	 *  gemäß den üblichen Gepflogenheiten erscheint. >>
 	 */
 
+<<<<<<< HEAD
 	std::cout << "Blabla." << std::endl;
 
 	// Constructed at STACK >>
@@ -58,12 +59,22 @@ int main() {
 		if (quit)
 			running = false;
 
+=======
+	try {
+		wifip2p::SupplicantHandle wpasup("/var/run/wpa_supplicant/wlan0");
+
+		/*
+		 * To test implemented functions enter the code here. The actual
+		 *  testing should take place by running Johannes' make -check script,
+		 *  as he has described in his e-mail regarding libwifip2p.
+		 */
+>>>>>>> dc1ea49a9a7e39824ec038ce273762bd5548179b
 		wpasup.funcTest();
 
-
+	} catch (wifip2p::SupplicantHandleException &ex) {
+		std::cerr << "Error: " << ex.what() << std::endl;
+		return -1;
 	}
-
-	cout << "blabla" << endl;
 
 	return 0;
 }
