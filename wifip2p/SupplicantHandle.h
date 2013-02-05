@@ -9,8 +9,8 @@
 #ifndef SUPPLICANTHANDLE_H_
 #define SUPPLICANTHANDLE_H_
 
-//niewue
 #include <iostream>
+#include <sys/time.h> //FD_SET and functions...
 
 
 namespace wifip2p {
@@ -31,33 +31,37 @@ namespace wifip2p {
 		const std::string _what;
 	};
 
+
+
 	class SupplicantHandle {
 
 		public:
-			SupplicantHandle(const char *ctrl_path) throw (SupplicantHandleException);
+			SupplicantHandle(const char *ctrl_path, bool monitor)
+					throw (SupplicantHandleException);
 			virtual ~SupplicantHandle();
 
-			//niewue
 			void funcTest() throw (SupplicantHandleException);
+
+			void* getHandle();
+			int getFDListen();
+
+			char* recvReply(char *replybuf, size_t reply_len);
 
 
 		private:
-			/*
-			 * void *_handle represents a generic pointer,
-			 *  that is, a pointer which may point at memory
-			 *  of any variables' type as long as it is not
-			 *  defined as either 'const' or 'volatile'.
-			 *  In that sense, one may call it an unspecified
-			 *  pointer.
-			 */
+			bool monitor_mode;
 			void *_handle;
+			int fd_listen;
+
+
+			bool setMonitorMode();
 
 			//niewue
 			bool findPeer();
 
-			//int wpa_ctrl_attach(_handle);
+			void p2p_find() throw (SupplicantHandleException);
 
-	};
+};
 
 } /* namespace wifip2p */
 #endif /* SUPPLICANTHANDLE_H_ */
