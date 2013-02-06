@@ -46,6 +46,9 @@ namespace wifip2p {
 			int getFDListen();
 
 			char* recvReply(char *replybuf, size_t reply_len);
+			char* recvReply();
+
+
 
 
 		private:
@@ -55,9 +58,6 @@ namespace wifip2p {
 
 
 			bool setMonitorMode();
-
-			//niewue
-			bool findPeer();
 
 			void p2p_find() throw (SupplicantHandleException);
 

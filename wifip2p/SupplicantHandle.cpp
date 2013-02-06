@@ -12,6 +12,7 @@
 //#include <stdint.h>
 #include <cstdlib>
 #include <iostream>
+#include <unistd.h>	//recvReply FD operations accordingly to http://www.kernel.org/doc/man-pages/online/pages/man2/read.2.html
 #include "common/wpa_ctrl.h"
 
 namespace wifip2p {
@@ -54,6 +55,10 @@ namespace wifip2p {
 		 *  wpa_ctrl_close gets handed over the actual control_i/f
 		 *  referenced by _handle.
 		 */
+		if (monitor_mode)
+			if (wpa_ctrl_detach((struct wpa_ctrl*)_handle) < 0)
+				std::cerr << "Failed to detach monitor properly. Close will be forced." << std::endl;
+
 		wpa_ctrl_close((struct wpa_ctrl*)_handle);
 
 	}
@@ -72,45 +77,9 @@ namespace wifip2p {
 	 */
 
 	/*
-	 * One first example of the previously stated: Here the exact function
-	 *  wpa_ctrl_attach(), as defined in hostap/src/common/wpa_ctrl.h, is
-	 *  used by handing over the _handle, which represents the address
-	 *  of the socket connection.
-	 */
-	/*int wpa_ctrl_attach(SupplicantHandle::_handle) {
-		return 1;
-	}*/
-
-
-	/*
 	static void hostapd_cli_msg_cb(char *msg, size_t len)
 	{
 		std::cout << msg << std::endl;
-	}
-
-	bool SupplicantHandle::findPeer() {
-
-		char *resp = NULL;
-		size_t resp_len = 0;
-
-		try {
-			resp = new char[64];
-
-			wpa_ctrl_request((struct wpa_ctrl*)_handle, "p2p_find", 8, resp, &resp_len, NULL);
-
-			wpa_ctrl_request((struct wpa_ctrl*)_handle, "p2p_find", 8, resp, &resp_len, hostapd_cli_msg_cb);
-					//How to handle this last msg-callback thing?
-
-			delete[] resp;
-
-			return true;
-
-		} catch (std::bad_alloc &e) {
-			//TODO: Exception handling
-		}
-
-		return true;
-
 	}
 	*/
 
@@ -204,23 +173,41 @@ namespace wifip2p {
 
 		fd_set readfs;
 
-		FD_SET(fd_listen, &readfs);  /* set testing for source 1 */
+		//set testing for source 1
+		FD_SET(fd_listen, &readfs);
+		//FD_SET(fd2, &readfs);
 
-		//FD_SET(fd2, &readfs);  /* set testing for source 2 */
-		/* block until input becomes available */
+		//set testing for source 2
+		//block until input becomes available
+
 		//select(maxfd, &readfs, NULL, NULL, NULL);
 
-		if (FD_ISSET(fd_listen, &readfs)) {        /* input from source 1 available */
+		if (FD_ISSET(fd_listen, &readfs)) {	//input from source 1 available
 
 			wpa_ctrl_recv((struct wpa_ctrl *)_handle, *&replybuf, &reply_len);
 
 			return replybuf;
 
-			//if (FD_ISSET(fd2))         /* input from source 2 available */
+			//if (FD_ISSET(fd2))         // input from source 2 available
 			//  handle_input_from_source2();
 		}
+	}
+
+	char* SupplicantHandle::recvReply() {
+
+		char *buf[128];
+		size_t buf_len = sizeof(buf) - 1;
+		ssize_t buf_read;
+
+		buf_read = read(fd_listen, *buf, buf_len);
+
+		if (buf_read >= 0) {
+			return *buf;
+		} else
+			return "FD read() was not successful.";
 
 	}
+
 
 	bool SupplicantHandle::setMonitorMode() {
 
@@ -236,7 +223,7 @@ namespace wifip2p {
 			std::cout << "fd_listen state: " << fd_listen << std::endl;
 
 			if (fd_listen < 0) {
-				std::cout << "FileDescr. problem occured." << std::endl;
+				std::cerr << "FileDescr. problem occured." << std::endl;
 				return false;
 			}
 			return true;

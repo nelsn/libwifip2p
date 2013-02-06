@@ -52,11 +52,15 @@ int main() {
 //
 //			res
 
-			std::string rpl(wpa_mon.recvReply(*reply, reply_len), reply_len);
-			if (rpl.substr(7,22) == "P2P-DEVICE-FOUND") {
-				std::cout << wpa_mon.recvReply(*reply, reply_len) << std::endl;
-				loop = false;
-			}
+			//wpa_mon.recvReply();
+
+//			std::string rpl(wpa_mon.recvReply(*reply, reply_len), reply_len);
+//			if (rpl.substr(7,22) == "P2P-DEVICE-FOUND") {
+//				std::cout << wpa_mon.recvReply(*reply, reply_len) << std::endl;
+//				loop = false;
+//			}
+
+
 		}
 
 	} catch (wifip2p::SupplicantHandleException &ex) {
