@@ -15,51 +15,51 @@
 
 namespace wifip2p {
 
-	class SupplicantHandleException : public std::exception {
-	public:
-		SupplicantHandleException(const std::string &what) : _what(what) {
-		}
+class SupplicantHandleException : public std::exception {
+public:
+	SupplicantHandleException(const std::string &what) : _what(what) {
+	}
 
-		~SupplicantHandleException() throw () {
-		}
+	~SupplicantHandleException() throw () {
+	}
 
-		std::string what() {
-			return _what;
-		}
+	std::string what() {
+		return _what;
+	}
 
-	private:
-		const std::string _what;
-	};
-
-
-
-	class SupplicantHandle {
-
-		public:
-			SupplicantHandle(const char *ctrl_path, bool monitor)
-					throw (SupplicantHandleException);
-			virtual ~SupplicantHandle();
-
-			void funcTest() throw (SupplicantHandleException);
-
-			void* getHandle();
-			int getFDListen();
-
-			char* recvReply(char *replybuf, size_t reply_len);
-			char* recvReply();
+private:
+	const std::string _what;
+};
 
 
 
+class SupplicantHandle {
 
-		private:
-			bool monitor_mode;
-			void *_handle;
-			int fd_listen;
+public:
+	SupplicantHandle(const char *ctrl_path, bool monitor)
+		throw (SupplicantHandleException);
+	virtual ~SupplicantHandle();
+
+	void funcTest() throw (SupplicantHandleException);
+
+	void* getHandle();
+	int getFDListen();
+
+	char* recvReply(char *replybuf, size_t reply_len);
+	char* recvReply();
 
 
-			bool setMonitorMode();
 
-			void p2p_find() throw (SupplicantHandleException);
+
+private:
+	bool monitor_mode;
+	void *_handle;
+	int fd_listen;
+
+
+	bool setMonitorMode();
+
+	void p2p_find() throw (SupplicantHandleException);
 
 };
 

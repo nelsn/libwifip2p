@@ -9,6 +9,7 @@
 #define COREENGINE_H_
 
 #include "wifip2p/SupplicantHandle.h"
+#include "wifip2p/Peer.h"
 
 namespace wifip2p {
 
@@ -35,7 +36,8 @@ public:
 	CoreEngine();
 	virtual ~CoreEngine();
 
-	void run(); //really void? Or int={-1=err, 0=okay}
+	void run(); //really void? Or int:={-1=err, 0=okay}
+	bool modInterests(std::list<std::string> interests);
 
 	enum state { ST_CONN_NO,
 				 ST_SCAN,
@@ -45,9 +47,12 @@ public:
 
 
 private:
-	char local_service;
+	std::list<std::string> peer_interests;
+
 	wifip2p::SupplicantHandle wpa_in;
 	wifip2p::SupplicantHandle wpa_monitor;
+
+	std::list<wifip2p::Peer> peers;
 
 	state actual_state;
 
