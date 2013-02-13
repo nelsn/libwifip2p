@@ -8,55 +8,100 @@
 #ifndef COREENGINE_H_
 #define COREENGINE_H_
 
+#include <list.h>
+#include <string>
+
 #include "wifip2p/SupplicantHandle.h"
 #include "wifip2p/Peer.h"
 
+using namespace std;
+
 namespace wifip2p {
 
-class CoreEngineException : public std::exception {
+class CoreEngineException : public exception {
 public:
-	CoreEngineException(const std::string &what) : _what(what) {
+	CoreEngineException(const string &what) : _what(what) {
 	}
 
 	~CoreEngineException() throw () {
 	}
 
-	std::string what() {
+	string what() {
 		return _what;
 	}
 
 private:
-	const std::string _what;
+	const string _what;
 };
 
 
 class CoreEngine {
 
 public:
-	CoreEngine();
+	/* Constructors, destructors >>
+	 *
+	 */
+	CoreEngine(const char *ctrl_path, string name) throw (CoreEngineException);
 	virtual ~CoreEngine();
 
-	void run(); //really void? Or int:={-1=err, 0=okay}
-	bool modInterests(std::list<std::string> interests);
+	/* Member variables >>
+	 *
+	 */
+	SupplicantHandle wpasup;
+	SupplicantHandle wpamon;
 
-	enum state { ST_CONN_NO,
+
+	/* Methods/Member functions >>
+	 *
+	 */
+	void run(); //really void? Or int:={-1=err, 0=okay}
+
+	void connect(Peer peer);
+
+	void disconnect(Connection connection);
+	void disconnect(NetworkIntf nic);
+	void disconnect(Peer peer);
+
+	void setName(string name);
+
+	void reinitialize(const char* ctrl_path);
+	void reinitialize(const char* ctrl_path, list<string> services);
+
+	bool addService(string service);
+	bool addService(list<string> services);
+
+
+	string getName();
+
+
+	/* Enumeration definitions >>
+	 *
+	 */
+	enum state { ST_IDLE,
 				 ST_SCAN,
-				 ST_SDREQ,
-				 ST_CONNECT,
-				 ST_CONN_EST };
+				 ST_SREQ,
+				 ST_CONN };
 
 
 private:
-	std::list<std::string> peer_interests;
+	/* Member variables >>
+	 *
+	 */
+	string name;
+	list<string> services;
 
-	wifip2p::SupplicantHandle wpa_in;
-	wifip2p::SupplicantHandle wpa_monitor;
+	list::list<Peer> peers;
+	list<Connection> connections;
 
-	std::list<wifip2p::Peer> peers;
+	WifiP2PInterface event_out;
 
 	state actual_state;
 
 
+	/* Methods/Member functions >>
+	 *
+	 */
+	void initialize(const char* ctrl_path);
 
 };
 

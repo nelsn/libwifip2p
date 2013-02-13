@@ -5,6 +5,9 @@
  *      Author: niels_w
  */
 
+#include <iostream>
+#include <string>
+
 #ifndef PEER_H_
 #define PEER_H_
 
@@ -30,7 +33,7 @@ private:
 class Peer {
 
 public:
-	Peer(const char *mac) throw (PeerException); //Param std::string mac
+	Peer(std::string) throw (PeerException); //Param std::string mac
 	virtual ~Peer();
 
 	std::string getMacAddr();

@@ -49,6 +49,8 @@ public:
 	char* recvReply();
 
 
+	void setDeviceName(std::string name);
+
 
 
 private:
@@ -57,7 +59,7 @@ private:
 	int fd_listen;
 
 
-	bool setMonitorMode();
+	bool setMonitorMode() throw (SupplicantHandleException) ;
 
 	void p2p_find() throw (SupplicantHandleException);
 

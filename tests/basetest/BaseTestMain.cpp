@@ -25,13 +25,15 @@ int main() {
 
 	try {
 
-		std::string s("blabl");
-		//wifip2p::Peer peer("aa");
+		//wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
+
+		wifip2p::Peer peer("Ab:Cf:09:23:45:7g");
+
 		//std::cout << peer_a.getMacAddr() << std::endl;
 		//wifip2p::Peer peer_b("ab;cd:01:23:45:78");
 		//wifip2p::Peer peer_c("ab:cd:01:23:45:7");
 //
-		wifip2p::SupplicantHandle wpa_out("/var/run/wpa_supplicant/wlan1", 0);
+		wifip2p::SupplicantHandle wpa_out("/var/run/wpa_supplicant/wlan1", true);
 //		wifip2p::SupplicantHandle wpa_mon("/var/run/wpa_supplicant/wlan1", 1);
 //
 //		/*
@@ -69,7 +71,10 @@ int main() {
 //
 //		}
 
-	} catch (exception &ex) {
+	} catch (wifip2p::SupplicantHandleException &ex) {
+		std::cerr << "Error: " << ex.what() << std::endl;
+		return -1;
+	} catch (wifip2p::PeerException &ex) {
 		std::cerr << "Error: " << ex.what() << std::endl;
 		return -1;
 	}

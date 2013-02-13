@@ -45,7 +45,6 @@ namespace wifip2p {
 			throw SupplicantHandleException("Connection to WPASUP failed.");
 		}
 
-
 	}
 
 	SupplicantHandle::~SupplicantHandle() {
@@ -209,7 +208,7 @@ namespace wifip2p {
 	}
 
 
-	bool SupplicantHandle::setMonitorMode() {
+	bool SupplicantHandle::setMonitorMode() throw (SupplicantHandleException) {
 
 		if (wpa_ctrl_attach((struct wpa_ctrl*) (_handle)) == 0) {
 			/* TODO:
@@ -223,7 +222,7 @@ namespace wifip2p {
 			std::cout << "fd_listen state: " << fd_listen << std::endl;
 
 			if (fd_listen < 0) {
-				std::cerr << "FileDescr. problem occured." << std::endl;
+				throw SupplicantHandleException("FileDescr. problem occured.");
 				return false;
 			}
 			return true;
