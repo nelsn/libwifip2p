@@ -5,14 +5,14 @@
  *      Author: niels_w
  */
 
-#include <list>
-#include "CoreEngine.h"
+#include "wifip2p/CoreEngine.h"
 
 namespace wifip2p {
 
 CoreEngine::CoreEngine(const char *ctrl_path, string name) throw (CoreEngineException) {
+	this->ctrl_path = ctrl_path;
 	this->name = name;
-	this->initialize(ctrl_path);
+	this->initialize(this->ctrl_path);
 }
 
 CoreEngine::~CoreEngine() {
@@ -34,9 +34,11 @@ void CoreEngine::disconnect(wifip2p::Connection connection) {
 	;
 }
 
-void CoreEngine::disconnect(wifip2p::NetworkIntf nic) {
-	;
-}
+/*
+ *void CoreEngine::disconnect(wifip2p::NetworkIntf nic) {
+ *	;
+ *}
+ */
 
 void CoreEngine::disconnect(wifip2p::Peer peer) {
 	;
@@ -44,15 +46,16 @@ void CoreEngine::disconnect(wifip2p::Peer peer) {
 
 void CoreEngine::setName(std::string name) {
 	this->name = name;
-	this->reinitialze();
+	this->reinitialize();
 }
 
-void CoreEngine::reinitialize(const char* ctrl_path) {
-	this->initialize();
+void CoreEngine::reinitialize() {
+	this->initialize(this->ctrl_path);
 }
 
 void CoreEngine::reinitialize(const char* ctrl_path, std::list<string> services) {
-	;
+	this->initialize(ctrl_path);
+	this->services = services;
 }
 
 bool CoreEngine::addService(string service) {
@@ -64,13 +67,15 @@ bool CoreEngine::addService(list<string> services) {
 }
 
 void CoreEngine::initialize(const char* ctrl_path) throw (CoreEngineException) {
+	this->ctrl_path = ctrl_path;
 	this->actual_state = ST_IDLE;
 
-	this->wpasup = wifip2p::SupplicantHandle(ctrl_path, false);
-	this->wpamon = wifip2p::SupplicantHandle(ctrl_path, true);
-
-	if (this->wpasup == NULL || this->wpamon == NULL)
-		throw CoreEngineException("Error initializing SupplicantHandles.");
+	try {
+		this->wpasup = wifip2p::SupplicantHandle(ctrl_path, false);
+		this->wpamon = wifip2p::SupplicantHandle(ctrl_path, true);
+	} catch (SupplicantHandleException &e) {
+		throw CoreEngineException("Error initializing SupplicantHandles. Caused by: " + e.what());
+	}
 
 	this->wpasup.setDeviceName(name);
 }
