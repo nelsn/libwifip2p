@@ -6,7 +6,7 @@
  */
 
 #include <list>
-#include "CoreEngine.h"
+#include "wifip2p/CoreEngine.h"
 
 namespace wifip2p {
 

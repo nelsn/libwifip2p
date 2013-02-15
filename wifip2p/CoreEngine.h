@@ -12,7 +12,11 @@
 #include <string>
 
 #include "wifip2p/SupplicantHandle.h"
+#include "wifip2p/WifiP2PInterface.h"
+#include "wifip2p/Timer.h"
+#include "wifip2p/Connection.h"
 #include "wifip2p/Peer.h"
+#include "wifip2p/NetworkIntf.h"
 
 using namespace std;
 
@@ -90,7 +94,7 @@ private:
 	string name;
 	list<string> services;
 
-	list::list<Peer> peers;
+	list<Peer> peers;
 	list<Connection> connections;
 
 	WifiP2PInterface event_out;
@@ -101,7 +105,7 @@ private:
 	/* Methods/Member functions >>
 	 *
 	 */
-	void initialize(const char* ctrl_path);
+	void initialize(const char* ctrl_path) throw (CoreEngineException);
 
 };
 
