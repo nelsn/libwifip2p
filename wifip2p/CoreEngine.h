@@ -45,7 +45,7 @@ public:
 	/* Constructors, destructors >>
 	 *
 	 */
-	CoreEngine(const char *ctrl_path, string name) throw (CoreEngineException);
+	CoreEngine(string ctrl_path, string name) throw (CoreEngineException);
 	virtual ~CoreEngine();
 
 	/* Member variables >>
@@ -68,7 +68,7 @@ public:
 
 	void setName(string name);
 
-	void reinitialize(const char* ctrl_path);
+	void reinitialize();
 	void reinitialize(const char* ctrl_path, list<string> services);
 
 	bool addService(string service);
@@ -91,6 +91,7 @@ private:
 	/* Member variables >>
 	 *
 	 */
+	string ctrl_path;
 	string name;
 	list<string> services;
 

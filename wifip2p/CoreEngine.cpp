@@ -10,9 +10,9 @@
 
 namespace wifip2p {
 
-CoreEngine::CoreEngine(const char *ctrl_path, string name) throw (CoreEngineException) {
+CoreEngine::CoreEngine(string ctrl_path, string name) throw (CoreEngineException) {
 	this->name = name;
-	this->initialize(ctrl_path);
+	this->initialize(ctrl_path.c_str());
 }
 
 CoreEngine::~CoreEngine() {
@@ -44,11 +44,11 @@ void CoreEngine::disconnect(wifip2p::Peer peer) {
 
 void CoreEngine::setName(std::string name) {
 	this->name = name;
-	this->reinitialze();
+	this->reinitialize();
 }
 
-void CoreEngine::reinitialize(const char* ctrl_path) {
-	this->initialize();
+void CoreEngine::reinitialize() {
+	this->initialize(this->ctrl_path.c_str());
 }
 
 void CoreEngine::reinitialize(const char* ctrl_path, std::list<string> services) {
@@ -66,11 +66,13 @@ bool CoreEngine::addService(list<string> services) {
 void CoreEngine::initialize(const char* ctrl_path) throw (CoreEngineException) {
 	this->actual_state = ST_IDLE;
 
-	this->wpasup = wifip2p::SupplicantHandle(ctrl_path, false);
-	this->wpamon = wifip2p::SupplicantHandle(ctrl_path, true);
+	try {
+		this->wpasup = wifip2p::SupplicantHandle(ctrl_path, false);
+		this->wpamon = wifip2p::SupplicantHandle(ctrl_path, true);
+	} catch (SupplicantHandleException &ex) {
+		throw CoreEngineException("Error initializing handles: " + ex.what());
+	}
 
-	if (this->wpasup == NULL || this->wpamon == NULL)
-		throw CoreEngineException("Error initializing SupplicantHandles.");
 
 	this->wpasup.setDeviceName(name);
 }

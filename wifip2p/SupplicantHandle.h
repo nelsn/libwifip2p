@@ -36,6 +36,7 @@ private:
 class SupplicantHandle {
 
 public:
+	SupplicantHandle();
 	SupplicantHandle(const char *ctrl_path, bool monitor)
 		throw (SupplicantHandleException);
 	virtual ~SupplicantHandle();

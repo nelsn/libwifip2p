@@ -17,6 +17,10 @@
 
 namespace wifip2p {
 
+	SupplicantHandle::SupplicantHandle() {
+		;
+	}
+
 	SupplicantHandle::SupplicantHandle(const char *ctrl_path, bool monitor)
 			throw (SupplicantHandleException) {
 
