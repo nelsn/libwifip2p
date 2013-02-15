@@ -33,6 +33,7 @@ private:
 class Peer {
 
 public:
+	Peer();
 	Peer(std::string) throw (PeerException); //Param std::string mac
 	virtual ~Peer();
 

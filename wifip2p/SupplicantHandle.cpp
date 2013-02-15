@@ -6,7 +6,7 @@
  *      		niels_w
  */
 
-#include "wifip2p/SupplicantHandle.h"
+#include "SupplicantHandle.h"
 
 //#include <stdlib.h>
 //#include <stdint.h>
@@ -16,6 +16,9 @@
 #include "common/wpa_ctrl.h"
 
 namespace wifip2p {
+	SupplicantHandle::SupplicantHandle() {
+		;
+	}
 
 	SupplicantHandle::SupplicantHandle(const char *ctrl_path, bool monitor)
 			throw (SupplicantHandleException) {
@@ -229,6 +232,10 @@ namespace wifip2p {
 		} else
 			return false;
 
+	}
+
+	void setDeviceName(std::string name) {
+		this->name = name;
 	}
 
 } /* namespace wifip2p */

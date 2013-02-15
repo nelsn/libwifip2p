@@ -1,5 +1,7 @@
 #include "wifip2p/SupplicantHandle.h"
 #include "wifip2p/Peer.h"
+#include "wifip2p/NetworkIntf.h"
+#include "wifip2p/CoreEngine.h"
 
 
 using namespace std;

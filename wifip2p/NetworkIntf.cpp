@@ -7,9 +7,16 @@
 
 #include "NetworkIntf.h"
 
+using namespace std;
+
 namespace wifip2p {
 
-NetworkIntf::NetworkIntf(std::string ifname) {
+
+NetworkIntf::NetworkIntf() {
+	;
+}
+
+NetworkIntf::NetworkIntf(string ifname) {
 	this->ifname = ifname;
 }
 
@@ -17,8 +24,9 @@ NetworkIntf::~NetworkIntf() {
 	// TODO Auto-generated destructor stub
 }
 
-} /* namespace wifip2p */
-
 const string& NetworkIntf::getIfname() const {
 	return ifname;
 }
+
+
+} /* namespace wifip2p */

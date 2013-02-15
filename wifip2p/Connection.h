@@ -18,8 +18,8 @@ class Connection {
 public:
 	Connection(NetworkIntf nic, Peer peer);
 	virtual ~Connection();
-	const NetworkIntf& getNic() const;
-	const Peer& getPeer() const;
+	const NetworkIntf& getNic();
+	const Peer& getPeer();
 
 private:
 	NetworkIntf nic;

@@ -16,6 +16,7 @@ namespace wifip2p {
 
 class NetworkIntf {
 public:
+	NetworkIntf();
 	NetworkIntf(string ifname);
 	virtual ~NetworkIntf();
 	const string& getIfname() const;

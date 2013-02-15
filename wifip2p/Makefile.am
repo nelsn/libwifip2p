@@ -13,8 +13,8 @@ else
 hostap_cc_sources += $(top_srcdir)/hostap/src/utils/os_unix.c
 endif
 
-h_sources = wifip2p.h SupplicantHandle.h Peer.h CoreEngine.h
-cc_sources = SupplicantHandle.cpp Peer.cpp CoreEngine.cpp
+h_sources = wifip2p.h SupplicantHandle.h Peer.h CoreEngine.h Connection.h WifiP2PInterface.h NetworkIntf.h
+cc_sources = SupplicantHandle.cpp Peer.cpp CoreEngine.cpp Connection.cpp WifiP2PInterface.cpp NetworkIntf.cpp
 
 library_includedir=$(includedir)/$(GENERIC_LIBRARY_NAME)-$(GENERIC_API_VERSION)/$(GENERIC_LIBRARY_NAME)
 library_include_HEADERS = $(hostap_h_sources) $(h_sources)

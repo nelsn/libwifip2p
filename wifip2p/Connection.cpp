@@ -5,7 +5,7 @@
  *      Author: niels_w
  */
 
-#include "Connection.h"
+#include "wifip2p/Connection.h"
 
 namespace wifip2p {
 
@@ -18,12 +18,13 @@ Connection::~Connection() {
 	// TODO Auto-generated destructor stub
 }
 
-} /* namespace wifip2p */
-
-const wifip2p::NetworkIntf& Connection::getNic() const {
+const wifip2p::NetworkIntf& Connection::getNic() {
 	return nic;
 }
 
-const wifip2p::Peer& Connection::getPeer() const {
+const Peer& Connection::getPeer() {
 	return peer;
 }
+
+
+} /* namespace wifip2p */

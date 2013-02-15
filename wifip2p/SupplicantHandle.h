@@ -12,23 +12,24 @@
 #include <iostream>
 #include <sys/time.h> //FD_SET and functions...
 
+using namespace std;
 
 namespace wifip2p {
 
-class SupplicantHandleException : public std::exception {
+class SupplicantHandleException : public exception {
 public:
-	SupplicantHandleException(const std::string &what) : _what(what) {
+	SupplicantHandleException(const string &what) : _what(what) {
 	}
 
 	~SupplicantHandleException() throw () {
 	}
 
-	std::string what() {
+	string what() {
 		return _what;
 	}
 
 private:
-	const std::string _what;
+	const string _what;
 };
 
 
@@ -36,6 +37,7 @@ private:
 class SupplicantHandle {
 
 public:
+	SupplicantHandle();
 	SupplicantHandle(const char *ctrl_path, bool monitor)
 		throw (SupplicantHandleException);
 	virtual ~SupplicantHandle();
@@ -49,13 +51,14 @@ public:
 	char* recvReply();
 
 
-	void setDeviceName(std::string name);
+	void setDeviceName(string name);
 
 
 
 private:
 	bool monitor_mode;
 	void *_handle;
+	string name;
 	int fd_listen;
 
 
