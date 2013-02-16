@@ -15,6 +15,8 @@
 #include <unistd.h>	//recvReply FD operations accordingly to http://www.kernel.org/doc/man-pages/online/pages/man2/read.2.html
 #include "common/wpa_ctrl.h"
 
+using namespace std;
+
 namespace wifip2p {
 
 	SupplicantHandle::SupplicantHandle() {
@@ -38,13 +40,13 @@ namespace wifip2p {
 		if (_handle != NULL) {
 			if (monitor_mode) {
 				if (this->setMonitorMode())
-					std::cout << "WPASUP is now being monitored." << std::endl;
+					cout << "WPASUP is now being monitored." << endl;
 				else {
 					monitor_mode = false;
 					throw SupplicantHandleException("Failed to set monitor mode.");
 				}
 			} else
-				std::cout << "Connection to WPASUP established." << std::endl;
+				cout << "Connection to WPASUP established." << endl;
 		} else {
 			throw SupplicantHandleException("Connection to WPASUP failed.");
 		}
@@ -60,7 +62,7 @@ namespace wifip2p {
 		 */
 		if (monitor_mode)
 			if (wpa_ctrl_detach((struct wpa_ctrl*)_handle) < 0)
-				std::cerr << "Failed to detach monitor properly. Close will be forced." << std::endl;
+				cerr << "Failed to detach monitor properly. Close will be forced." << endl;
 
 		wpa_ctrl_close((struct wpa_ctrl*)_handle);
 
@@ -82,7 +84,7 @@ namespace wifip2p {
 	/*
 	static void hostapd_cli_msg_cb(char *msg, size_t len)
 	{
-		std::cout << msg << std::endl;
+		cout << msg << endl;
 	}
 	*/
 
@@ -101,59 +103,68 @@ namespace wifip2p {
 		if (ret != 0)
 			throw SupplicantHandleException("PING request failed");
 
-		// convert reply to a std::string
-		std::string reply(replybuf, reply_len);
+		// convert reply to a string
+		string reply(replybuf, reply_len);
 
 		if (reply.substr(0,4) != "PONG")
 			throw SupplicantHandleException("WPASUPP did not reply to PING");
 
-		this->p2p_find();
 	}
 
-	/*
-	 * p2p_find(Timer core_engines_timer_object)
-	 * 	one could also think of. By that, the Timer object is instantiated and maintained
-	 * 	by the respective CoreEngine while at the same time may be used with all its
-	 * 	timing functionality within SupplicantHandle methods which are in need of some
-	 * 	function of time, determining whether to stop and internally call another method,
-	 * 	e.g. stop p2p_find as determined by the timer and in return within the _find method
-	 * 	starting p2p_get_peers.
-	 * 	By that, one is able to orchestrate several methods and hide their inherent complexities
-	 * 	from the CoreEngine's statemachine/running-loop.
+	/**
+	 * Initiates P2P_FIND command at wpa_s. Escalates exception on failure.
+	 *
 	 */
-	void SupplicantHandle::p2p_find() throw (SupplicantHandleException) {
+	void SupplicantHandle::findPeers() throw (SupplicantHandleException) {
 
-		char replybuf[64];
-		size_t reply_len = sizeof(replybuf) - 1;
+		try {
+			this->p2pCommand("P2P_FIND");
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
 
-		int ret = wpa_ctrl_request(
-					(struct wpa_ctrl*)_handle, "P2P_FIND", 8, *&replybuf, &reply_len, NULL);
+	/**
+	 * TODO Look carefully whether the command requires all UPPERCASE writing
+	 * 	or not.
+	 *
+	 * @cmd: 	Command string, to be transmitted to wpa_s. See wpa_s documentation
+	 * 				for possible commands.
+	 * Returns: true or false, whether the command may be initiated successfully
+	 * 				or not.
+	 */
+	bool SupplicantHandle::p2pCommand(string cmd) throw (SupplicantHandleException) {
 
-		if (ret == -1)
+		const char *cmd_p;
+		cmd_p = cmd.c_str();
+
+		char 	reply_buf[64];
+		size_t 	reply_len = sizeof(reply_buf) - 1;
+
+		int ret = wpa_ctrl_request((struct wpa_ctrl*) _handle,
+				cmd_p, cmd.length(),
+				*&reply_buf, &reply_len, NULL);
+
+		if (ret == -1) {
 			throw SupplicantHandleException("wpa_s ctrl_i/f; send or receive failed.");
-		if (ret == -2)
+			return false;
+		}
+		if (ret == -2) {
 			throw SupplicantHandleException("wpa_s ctrl_i/f; communication timed out.");
-
-		std::string reply(replybuf, reply_len);
-
-		if (reply.substr(0, reply_len -1) == "FAIL")
-			throw SupplicantHandleException("WPASUP was not able to initiate P2P_FIND.");
-		else {
-//			std::cout << "läuft durch?" << std::endl;
-//			void *_handle_in;
-//			_handle_in = &_handle;
-//			_handle_in = wpa_ctrl_attach((struct wpa_ctrl*)_handle_in);
+			return false;
 		}
 
+		string reply(reply_buf, reply_len);
 
-		/* TODO wait for period of time for having the supplicant in p2p_find mode
-		 *  Then needs to call p2p_peers whether there are any found peers ore not;
-		 *  this method also needs to parse the peers-list returned in the reply_buf
-		 *  into a linked list or somewhat, accessible in the sense that one CoreEngine
-		 *  may initiate serv_disc and connect actions per peer...
-		 */
+		if (reply.substr(0, reply_len -1) == "FAIL") {
+			throw SupplicantHandleException("wpa_s was not able to initiate " + cmd + " successfully.");
+			return false;
+		} else {
+			return true;
+		}
 
 	}
+
 
 	/*
 	 * Utility functions >>
@@ -223,7 +234,7 @@ namespace wifip2p {
 			 */
 			fd_listen = wpa_ctrl_get_fd((struct wpa_ctrl*)_handle);
 
-			std::cout << "fd_listen state: " << fd_listen << std::endl;
+			cout << "fd_listen state: " << fd_listen << endl;
 
 			if (fd_listen < 0) {
 				throw SupplicantHandleException("FileDescr. problem occured.");

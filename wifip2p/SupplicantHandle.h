@@ -12,23 +12,26 @@
 #include <iostream>
 #include <sys/time.h> //FD_SET and functions...
 
+#include "wifip2p/Peer.h"
+
+using namespace std;
 
 namespace wifip2p {
 
-class SupplicantHandleException : public std::exception {
+class SupplicantHandleException : public exception {
 public:
-	SupplicantHandleException(const std::string &what) : _what(what) {
+	SupplicantHandleException(const string &what) : _what(what) {
 	}
 
 	~SupplicantHandleException() throw () {
 	}
 
-	std::string what() {
+	string what() {
 		return _what;
 	}
 
 private:
-	const std::string _what;
+	const string _what;
 };
 
 
@@ -41,6 +44,10 @@ public:
 		throw (SupplicantHandleException);
 	virtual ~SupplicantHandle();
 
+	/**
+	 * Only testing purpose
+	 *
+	 */
 	void funcTest() throw (SupplicantHandleException);
 
 	void* getHandle();
@@ -50,7 +57,12 @@ public:
 	char* recvReply();
 
 
-	void setDeviceName(std::string name);
+	void findPeers() throw (SupplicantHandleException);
+	void findPeersStop() throw (SupplicantHandleException);
+	void listen() throw (SupplicantHandleException);
+	void requestService(Peer peer, string service) throw (SupplicantHandleException);
+	void requestService(string service) throw (SupplicantHandleException);
+	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 
 
 
@@ -61,8 +73,12 @@ private:
 
 
 	bool setMonitorMode() throw (SupplicantHandleException) ;
+	void setDeviceName(string name) throw (SupplicantHandleException);
+	void flushServices() throw (SupplicantHandleException);
+	void addService(string service) throw (SupplicantHandleException);
 
-	void p2p_find() throw (SupplicantHandleException);
+	bool p2pCommand(string cmd) throw (SupplicantHandleException);
+
 
 };
 
