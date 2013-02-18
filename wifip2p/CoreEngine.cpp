@@ -5,16 +5,19 @@
  *      Author: niels_w
  */
 
-#include <list>
 #include "wifip2p/CoreEngine.h"
 
 using namespace std;
 
 namespace wifip2p {
 
-CoreEngine::CoreEngine(string ctrl_path, string name) throw (CoreEngineException) {
-	this->name = name;
-	this->initialize(ctrl_path.c_str());
+CoreEngine::CoreEngine(string ctrl_path, string name)
+		: wpasup(false),
+		  wpamon(true),
+		  actual_state(ST_IDLE),
+		  name(name),
+		  ctrl_path(ctrl_path) {
+
 }
 
 CoreEngine::~CoreEngine() {
@@ -25,7 +28,9 @@ CoreEngine::~CoreEngine() {
  *
  */
 void CoreEngine::run() {
-	;
+	wpasup.open(this->ctrl_path.c_str());
+	wpamon.open(this->ctrl_path.c_str());
+	wpasup.init(this->name, this->services);
 }
 
 void CoreEngine::connect(wifip2p::Peer peer) {
@@ -46,15 +51,23 @@ void CoreEngine::disconnect(wifip2p::Peer peer) {
 
 void CoreEngine::setName(string name) {
 	this->name = name;
-	this->reinitialize();
+	this->initialize();
 }
 
-void CoreEngine::reinitialize() {
-	this->initialize(this->ctrl_path.c_str());
-}
-
-void CoreEngine::reinitialize(const char* ctrl_path, list<string> services) {
-	;
+/**
+ * TODO Verify that calling ::initialize()::open() on already opened _handle
+ *  connections is not leading to any error.
+ *  Maybe to define and implement a method *terminate()*, closing all the connection
+ *  of the respective wpasup and wpamon _handles.
+ */
+void CoreEngine::reinitialize(string ctrl_path, list<string> services) throw (CoreEngineException) {
+	this->ctrl_path = ctrl_path;
+	this->services = services;
+	try {
+		this->initialize();
+	} catch (CoreEngineException &ex) {
+		throw CoreEngineException(ex.what());
+	}
 }
 
 bool CoreEngine::addService(string service) {
@@ -65,17 +78,18 @@ bool CoreEngine::addService(list<string> services) {
 	;
 }
 
-void CoreEngine::initialize(const char* ctrl_path) throw (CoreEngineException) {
-	this->actual_state = ST_IDLE;
+void CoreEngine::initialize() throw (CoreEngineException) {
 
 	try {
-		this->wpasup = wifip2p::SupplicantHandle(ctrl_path, false);
-		this->wpamon = wifip2p::SupplicantHandle(ctrl_path, true);
+		this->wpasup.open(this->ctrl_path.c_str());
+		this->wpamon.open(this->ctrl_path.c_str());
 	} catch (SupplicantHandleException &ex) {
 		throw CoreEngineException("Error initializing handles: " + ex.what());
 	}
 
-	this->wpasup.init(name, services);
+	this->actual_state = ST_IDLE;
+
+	//this->wpasup.init(name, services);
 
 }
 

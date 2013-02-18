@@ -43,13 +43,12 @@ private:
 class SupplicantHandle {
 
 public:
-	SupplicantHandle();
-	SupplicantHandle(const char *ctrl_path, bool monitor)
-		throw (SupplicantHandleException);
+	SupplicantHandle(bool monitor);
 	virtual ~SupplicantHandle();
 
 	void funcTest() throw (SupplicantHandleException);
 
+	void open(const char *ctrl_path) throw (SupplicantHandleException);
 	void init(string name, list<string> services) throw (SupplicantHandleException);
 
 	//----------

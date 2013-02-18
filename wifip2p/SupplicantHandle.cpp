@@ -22,37 +22,9 @@ namespace wifip2p {
 	const string SERVDISC_TYPE = "UPNP";
 	const string SERVDISC_VERS = "10";
 
-	SupplicantHandle::SupplicantHandle() {
-			;
-		}
-
-	SupplicantHandle::SupplicantHandle(const char *ctrl_path, bool monitor)
-			throw (SupplicantHandleException) {
-
-		monitor_mode = monitor;
-
-		/*
-		 * Here, _handle is defined to represent the now opened
-		 *  control_i/f expected from the ctrl_path parameter.
-		 *  E.g. when instantiated with the parameter /var/run/
-		 *  wpa_supplicant the WPASUP ctrl_i/f is now referenced
-		 *  by _handle.
-		 */
-		_handle = wpa_ctrl_open(ctrl_path);
-
-		if (_handle != NULL) {
-			if (monitor_mode) {
-				if (this->setMonitorMode())
-					cout << "WPASUP is now being monitored." << endl;
-				else {
-					monitor_mode = false;
-					throw SupplicantHandleException("Failed to set monitor mode.");
-				}
-			} else
-				cout << "Connection to WPASUP established." << endl;
-		} else {
-			throw SupplicantHandleException("Connection to WPASUP failed.");
-		}
+	SupplicantHandle::SupplicantHandle(bool monitor)
+		: _handle(NULL),
+		  monitor_mode(monitor) {
 
 	}
 
@@ -63,11 +35,12 @@ namespace wifip2p {
 		 *  wpa_ctrl_close gets handed over the actual control_i/f
 		 *  referenced by _handle.
 		 */
-		if (monitor_mode)
-			if (wpa_ctrl_detach((struct wpa_ctrl*)_handle) < 0)
-				cerr << "Failed to detach monitor properly. Close will be forced." << endl;
+		//if (monitor_mode)
+		//	if (wpa_ctrl_detach((struct wpa_ctrl*)_handle) < 0)
+		//		cerr << "Failed to detach monitor properly. Close will be forced." << endl;
 
-		wpa_ctrl_close((struct wpa_ctrl*)_handle);
+		if (_handle != NULL)
+			wpa_ctrl_close((struct wpa_ctrl*)_handle);
 
 	}
 
@@ -118,9 +91,36 @@ namespace wifip2p {
 
 	}
 
+
 	/**
-	 *
-	 *
+	 * @*ctrl_path: Here, _handle is defined, representing the now opened control_i/f
+	 * 				 of wpa_s as expected behind the *ctrl_path parameter.
+	 * 				 E.g. when wpa_s is bound to hardware interface wlan0, fully qualified
+	 * 				 *ctrl_path needs to match "/var/run/wpa_supplicant/wlan0"
+	 */
+	void SupplicantHandle::open(const char *ctrl_path) throw (SupplicantHandleException) {
+
+		_handle = wpa_ctrl_open(ctrl_path);
+
+		if (_handle != NULL) {
+			if (this->monitor_mode) {
+				if (this->setMonitorMode())
+					cout << "WPASUP is now being monitored." << endl;
+				else {
+					monitor_mode = false;
+					throw SupplicantHandleException("Failed to set monitor mode.");
+				}
+			} else
+				cout << "Connection to WPASUP established." << endl;
+		} else {
+			throw SupplicantHandleException("Connection to WPASUP failed.");
+		}
+	}
+
+	/**
+	 * @name: 	  The hardware interface's name, as to be set by wpa_s.
+	 * @services: The services, as to be registered by wpa_s for being able to
+	 * 			   respond, if any regarding requests come in.
 	 */
 	void SupplicantHandle::init(string name, list<string> services) throw (SupplicantHandleException) {
 
@@ -143,6 +143,7 @@ namespace wifip2p {
 	/**
 	 * @name: 	The name as to be set for the device, controlled by this wpa_s.
 	 * Returns: true, if device name is set; false, else. Throws exception on error.
+	 *
 	 */
 	bool SupplicantHandle::setDeviceName(string name) throw (SupplicantHandleException) {
 		try {

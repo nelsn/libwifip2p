@@ -15,6 +15,7 @@ namespace wifip2p {
 
 class Connection {
 public:
+	Connection();
 	Connection(Peer peer, NetworkIntf nic);
 	virtual ~Connection();
 

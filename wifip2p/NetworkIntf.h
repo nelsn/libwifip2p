@@ -8,6 +8,8 @@
 #ifndef NETWORKINTF_H_
 #define NETWORKINTF_H_
 
+#include <string>
+
 using namespace std;
 
 namespace wifip2p {
