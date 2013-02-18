@@ -19,9 +19,12 @@ using namespace std;
 
 namespace wifip2p {
 
+	const string SERVDISC_TYPE = "UPNP";
+	const string SERVDISC_VERS = "10";
+
 	SupplicantHandle::SupplicantHandle() {
-		;
-	}
+			;
+		}
 
 	SupplicantHandle::SupplicantHandle(const char *ctrl_path, bool monitor)
 			throw (SupplicantHandleException) {
@@ -88,6 +91,10 @@ namespace wifip2p {
 	}
 	*/
 
+	/**
+	 * Only for testing purposes.
+	 *
+	 */
 	void SupplicantHandle::funcTest() throw (SupplicantHandleException) {
 
 		char replybuf[64];
@@ -112,17 +119,127 @@ namespace wifip2p {
 	}
 
 	/**
+	 *
+	 *
+	 */
+	void SupplicantHandle::init(string name, list<string> services) throw (SupplicantHandleException) {
+
+		try {
+			this->setDeviceName(name);
+			this->flushServices();
+
+			list<string>::iterator it = services.begin();
+			if (!services.empty()) {
+				for (; it != services.end(); ++it) {
+					this->addService(name, *it);
+				}
+			}
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
+
+
+	/**
+	 * @name: 	The name as to be set for the device, controlled by this wpa_s.
+	 * Returns: true, if device name is set; false, else. Throws exception on error.
+	 */
+	bool SupplicantHandle::setDeviceName(string name) throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("SET DEVICE_NAME " + name);
+			return true;
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+		return false;
+	}
+
+	bool SupplicantHandle::flushServices() throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("P2P_SERVICE_FLUSH");
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
+
+	bool SupplicantHandle::addService(string name, string service) throw (SupplicantHandleException) {
+		try {
+			string cmd = "P2P_SERVICE_ADD "
+							+ SERVDISC_TYPE + " "
+							+ SERVDISC_VERS + " "
+							+ "name:" + name + "::"
+							+ "service:" + service;
+			this->p2pCommand(cmd);
+			return true;
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+		return false;
+	}
+
+	/**
 	 * Initiates P2P_FIND command at wpa_s. Escalates exception on failure.
 	 *
 	 */
 	void SupplicantHandle::findPeers() throw (SupplicantHandleException) {
-
 		try {
 			this->p2pCommand("P2P_FIND");
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
 	}
+
+	/**
+	 * Stops P2P_FIND command at wpa_s.
+	 *
+	 */
+	void SupplicantHandle::findPeersStop() throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("P2P_STOP_FIND");
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
+
+	void listen() throw (SupplicantHandleException);
+
+	void requestService(Peer peer, string service) throw (SupplicantHandleException);
+
+	void requestService(string service) throw (SupplicantHandleException);
+
+	/**
+	 * Creates a peering between this local and wpa_s controlled WNIC and Peer peer.
+	 * The method uses WPS Push Button Configuration (PBC). wpa_s will create a
+	 *   virtual WNIC per each connection which is going to be established. The virtual
+	 *   interface will be called "p2p-<HW-IF-name>-<#count>".
+	 * @Peer the peer to which wpa_s should initiate a connection.
+	 *
+	 */
+	void SupplicantHandle::connectToPeer(Peer peer) throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("P2P_CONNECT " + peer.getMacAddr() + " PBC");
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
+
+	/**
+	 * By now, this method only handles to remove wpa_s' created virtual WNICs, thus
+	 *  disconnecting both of the group's peers.
+	 * This is sufficient, as SupplicantHandle::connectToPeer(Peer) does not deal with
+	 *  joining a P2P group, whether available, but just always creates exactly one
+	 *  peering between each two devices in a separate group.
+	 *
+	 */
+	void SupplicantHandle::disconnect(Connection conn) throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("P2P_GROUP_REMOVE " + conn.getNetworkIntf().getName());
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
+
+
 
 	/**
 	 * TODO Look carefully whether the command requires all UPPERCASE writing

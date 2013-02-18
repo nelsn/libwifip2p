@@ -8,6 +8,8 @@
 #include <list>
 #include "wifip2p/CoreEngine.h"
 
+using namespace std;
+
 namespace wifip2p {
 
 CoreEngine::CoreEngine(string ctrl_path, string name) throw (CoreEngineException) {
@@ -42,7 +44,7 @@ void CoreEngine::disconnect(wifip2p::Peer peer) {
 	;
 }
 
-void CoreEngine::setName(std::string name) {
+void CoreEngine::setName(string name) {
 	this->name = name;
 	this->reinitialize();
 }
@@ -51,7 +53,7 @@ void CoreEngine::reinitialize() {
 	this->initialize(this->ctrl_path.c_str());
 }
 
-void CoreEngine::reinitialize(const char* ctrl_path, std::list<string> services) {
+void CoreEngine::reinitialize(const char* ctrl_path, list<string> services) {
 	;
 }
 
@@ -73,8 +75,8 @@ void CoreEngine::initialize(const char* ctrl_path) throw (CoreEngineException) {
 		throw CoreEngineException("Error initializing handles: " + ex.what());
 	}
 
+	this->wpasup.init(name, services);
 
-	this->wpasup.setDeviceName(name);
 }
 
 

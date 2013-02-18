@@ -27,7 +27,7 @@ int main() {
 
 		//wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
 
-		wifip2p::Peer peer("Ab:Cf:09:23:45:7g");
+		wifip2p::Peer peer("Ab:Cf:09:23:45:7g", "STA_NAME");
 
 		//std::cout << peer_a.getMacAddr() << std::endl;
 		//wifip2p::Peer peer_b("ab;cd:01:23:45:78");

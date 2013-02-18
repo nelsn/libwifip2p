@@ -8,7 +8,7 @@
 #ifndef COREENGINE_H_
 #define COREENGINE_H_
 
-#include <list.h>
+#include <list>
 #include <string>
 
 #include "wifip2p/SupplicantHandle.h"

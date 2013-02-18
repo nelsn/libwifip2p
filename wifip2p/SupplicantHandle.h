@@ -9,10 +9,14 @@
 #ifndef SUPPLICANTHANDLE_H_
 #define SUPPLICANTHANDLE_H_
 
+#include <list>
+#include <string>
+
 #include <iostream>
 #include <sys/time.h> //FD_SET and functions...
 
 #include "wifip2p/Peer.h"
+#include "wifip2p/Connection.h"
 
 using namespace std;
 
@@ -44,18 +48,17 @@ public:
 		throw (SupplicantHandleException);
 	virtual ~SupplicantHandle();
 
-	/**
-	 * Only testing purpose
-	 *
-	 */
 	void funcTest() throw (SupplicantHandleException);
 
+	void init(string name, list<string> services) throw (SupplicantHandleException);
+
+	//----------
 	void* getHandle();
 	int getFDListen();
 
 	char* recvReply(char *replybuf, size_t reply_len);
 	char* recvReply();
-
+	//----------/
 
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
@@ -63,19 +66,18 @@ public:
 	void requestService(Peer peer, string service) throw (SupplicantHandleException);
 	void requestService(string service) throw (SupplicantHandleException);
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
-
-
+	void disconnect(Connection conn) throw (SupplicantHandleException);
 
 private:
 	bool monitor_mode;
 	void *_handle;
 	int fd_listen;
 
+	bool setDeviceName(string name) throw (SupplicantHandleException);
+	bool flushServices() throw (SupplicantHandleException);
+	bool addService(string name, string service) throw (SupplicantHandleException);
 
-	bool setMonitorMode() throw (SupplicantHandleException) ;
-	void setDeviceName(string name) throw (SupplicantHandleException);
-	void flushServices() throw (SupplicantHandleException);
-	void addService(string service) throw (SupplicantHandleException);
+	bool setMonitorMode() throw (SupplicantHandleException);
 
 	bool p2pCommand(string cmd) throw (SupplicantHandleException);
 
