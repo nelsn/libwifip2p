@@ -177,7 +177,114 @@ namespace wifip2p {
 	}
 
 	void SupplicantHandle::listen() throw (SupplicantHandleException) {
-		;
+		if (this->monitor_mode) {
+
+//			int res;
+//			fd_set rfds;
+//			struct timeval tv;
+//			char buf[256];
+//			size_t len;
+//
+//			while (true) {
+//				FD_ZERO(&rfds);
+//				FD_SET(fd_listen, &rfds);
+//				tv.tv_sec = 5;
+//				tv.tv_usec = 0;
+//				res = select(fd_listen + 1, &rfds, NULL, NULL, &tv);
+//				if (res < 0) { //&& errno != EINTR) {
+//					perror("select");
+//					break;
+//				}
+//
+//				if (FD_ISSET(fd_listen, &rfds))
+//					hostapd_cli_recv_pending(_handle, 0, 1);
+//				else {
+//					len = sizeof(buf) - 1;
+//					if (wpa_ctrl_request(ctrl, "PING", 4, buf, &len,
+//							hostapd_cli_action_process) < 0 ||
+//							len < 4 || os_memcmp(buf, "PONG", 4) != 0) {
+//						printf("hostapd did not reply to PING "
+//								"command - exiting\n");
+//						break;
+//					}
+//				}
+//			}
+
+			/*
+			 *void WpaGui::receiveMsgs()
+			 *{
+			 *	char buf[256];
+			 *	size_t len;
+			 *
+			 *	while (monitor_conn && wpa_ctrl_pending(monitor_conn) > 0) {
+			 *		len = sizeof(buf) - 1;
+			 *		if (wpa_ctrl_recv(monitor_conn, buf, &len) == 0) {
+			 *			buf[len] = '\0';
+			 *			processMsg(buf);
+			 *		}
+			 *	}
+			 *}
+			 */
+
+			int ret_interval;
+			struct timeval timeout;
+			timeout.tv_usec = 0;
+			timeout.tv_sec  = 10;
+
+			char   reply_buf[256];
+			size_t reply_len = sizeof(reply_buf) - 1;
+
+			fd_set read_fd;
+
+			FD_SET(fd_listen, &read_fd);
+			ret_interval = select(fd_listen, &read_fd, NULL, NULL, &timeout);
+
+			this->p2pCommand("SCAN");
+
+			do {
+				cout << "TesMsg" << endl;
+
+				//this->p2pCommand("SCAN_RESULTS");
+
+				if (FD_ISSET(fd_listen, &read_fd)) {
+					wpa_ctrl_recv((struct wpa_ctrl *)_handle, *&reply_buf, &reply_len);
+					cout << reply_buf << endl;
+					break;
+				}
+
+			} while (ret_interval != 0);
+
+		} else {
+			// TODO is an exception really needed here?
+			throw SupplicantHandleException("SupplicantHandle needs to be in monitor mode for ::listen().");
+		}
+	}
+
+	void SupplicantHandle::xlisten() {
+        fd_set rfds;
+        struct timeval tv;
+        int retval;
+
+        /* Achte auf stdin (fd 0), um zu sehen, wenn es
+         * Eingaben gibt.
+         */
+        //FD_ZERO(&rfds);
+        FD_SET(fd_listen, &rfds);
+        /* Warte bis zu fünf Sekunden. */
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+
+        retval = select(fd_listen, &rfds, NULL, NULL, &tv);
+        /* Verlaß Dich jetzt bloß nicht auf den Wert von tv! */
+
+        do {
+        	if (retval)
+        		cout << "Daten sind jetzt da." << endl;
+        	/* FD_ISSET(0, &rfds) müsste jetzt true sein. */
+        	else
+        		cout << "Keine Dateien innerhalb von fünf Sekunden." << endl;
+        } while (!retval);
+
 	}
 
 	void SupplicantHandle::requestService(string service) throw (SupplicantHandleException) {
@@ -280,29 +387,19 @@ namespace wifip2p {
 	 */
 
 	char* SupplicantHandle::recvReply(char *replybuf, size_t reply_len) {
-
 		//int res;
 		//struct timeval Timeout;
 
 		fd_set readfs;
 
-		//set testing for source 1
 		FD_SET(fd_listen, &readfs);
-		//FD_SET(fd2, &readfs);
 
-		//set testing for source 2
-		//block until input becomes available
-
-		//select(maxfd, &readfs, NULL, NULL, NULL);
-
-		if (FD_ISSET(fd_listen, &readfs)) {	//input from source 1 available
+		if (FD_ISSET(fd_listen, &readfs)) {
 
 			wpa_ctrl_recv((struct wpa_ctrl *)_handle, *&replybuf, &reply_len);
 
 			return replybuf;
 
-			//if (FD_ISSET(fd2))         // input from source 2 available
-			//  handle_input_from_source2();
 		}
 	}
 
@@ -322,27 +419,27 @@ namespace wifip2p {
 	}
 
 
+	/**
+	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain socket.
+	 * Initializes the attached domain sockets FileDescriptor as returned by the
+	 * 	proper wpa_s control_i/f's function.
+	 * Returns: true, if the monitor may be set. false, otherwise.
+	 */
 	bool SupplicantHandle::setMonitorMode() throw (SupplicantHandleException) {
-
 		if (wpa_ctrl_attach((struct wpa_ctrl*) (_handle)) == 0) {
-			/* TODO:
-			 *
-			 *  FileDescriptor socket registration using
-			 *	wpa_ctrl_get_fd((struct wpa_ctrl*)_wpactrl_mon);
-			 *
-			 */
+
+			//Get monitoring socket's FD
 			fd_listen = wpa_ctrl_get_fd((struct wpa_ctrl*)_handle);
 
 			cout << "fd_listen state: " << fd_listen << endl;
 
 			if (fd_listen < 0) {
 				throw SupplicantHandleException("FileDescr. problem occured.");
-				return false;
 			}
 			return true;
-		} else
+		} else {
 			return false;
-
+		}
 	}
 
 } /* namespace wifip2p */

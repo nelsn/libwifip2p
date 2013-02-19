@@ -38,9 +38,12 @@ int main() {
 
 		wifip2p::Peer peer("Ab:Cf:09:23:45:7g", "STA_NAME");
 
-		wifip2p::TestSupplicantHandle supp(false);
+		wifip2p::TestSupplicantHandle supp_cmd(false);
+		wifip2p::TestSupplicantHandle supp_mon(true);
 
-		supp.functionsTest("/var/run/wpa_supplicant/wlan0");
+		supp_cmd.functionsTest("/var/run/wpa_supplicant/wlan0");
+		supp_mon.functionsTest("/var/run/wpa_supplicant/wlan0");
+
 
 
 		//std::cout << peer_a.getMacAddr() << std::endl;

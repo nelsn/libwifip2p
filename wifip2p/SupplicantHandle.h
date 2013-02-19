@@ -64,6 +64,9 @@ public:
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
 	void listen() throw (SupplicantHandleException);
+
+	void xlisten();
+
 	void requestService(string service) throw (SupplicantHandleException);
 	//void requestService(Peer peer, string service) throw (SupplicantHandleException);
 	//void requestServiceCancel(Peer peer, string service) throw (SupplicantHandleException);
@@ -75,11 +78,11 @@ private:
 	void *_handle;
 	int fd_listen;
 
+	bool setMonitorMode() throw (SupplicantHandleException);
+
 	bool setDeviceName(string name) throw (SupplicantHandleException);
 	bool flushServices() throw (SupplicantHandleException);
 	bool addService(string name, string service) throw (SupplicantHandleException);
-
-	bool setMonitorMode() throw (SupplicantHandleException);
 
 	bool p2pCommand(string cmd) throw (SupplicantHandleException);
 
