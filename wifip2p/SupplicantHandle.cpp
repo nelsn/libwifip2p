@@ -19,8 +19,9 @@ using namespace std;
 
 namespace wifip2p {
 
-	const string SERVDISC_TYPE = "UPNP";
+	const string SERVDISC_TYPE = "upnp";
 	const string SERVDISC_VERS = "10";
+	const string BROADCAST = "00:00:00:00:00:00";
 
 	SupplicantHandle::SupplicantHandle(bool monitor)
 		: _handle(NULL),
@@ -63,34 +64,6 @@ namespace wifip2p {
 		cout << msg << endl;
 	}
 	*/
-
-	/**
-	 * Only for testing purposes.
-	 *
-	 */
-	void SupplicantHandle::funcTest() throw (SupplicantHandleException) {
-
-		char replybuf[64];
-
-		// initialize the reply_len with the available buffer size
-		size_t reply_len = sizeof(replybuf) - 1;
-
-		// Send out a PING request. A wpa supplicant should answer with a PONG.
-		int ret = wpa_ctrl_request(
-				(struct wpa_ctrl*)_handle, "PING", 4, *&replybuf, &reply_len, NULL);
-
-		// check for call errors
-		if (ret != 0)
-			throw SupplicantHandleException("PING request failed");
-
-		// convert reply to a string
-		string reply(replybuf, reply_len);
-
-		if (reply.substr(0,4) != "PONG")
-			throw SupplicantHandleException("WPASUPP did not reply to PING");
-
-	}
-
 
 	/**
 	 * @*ctrl_path: Here, _handle is defined, representing the now opened control_i/f
@@ -147,7 +120,7 @@ namespace wifip2p {
 	 */
 	bool SupplicantHandle::setDeviceName(string name) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("SET DEVICE_NAME " + name);
+			this->p2pCommand("SET device_name " + name);
 			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
@@ -158,19 +131,20 @@ namespace wifip2p {
 	bool SupplicantHandle::flushServices() throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_SERVICE_FLUSH");
+			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
+		return false;
 	}
 
 	bool SupplicantHandle::addService(string name, string service) throw (SupplicantHandleException) {
 		try {
-			string cmd = "P2P_SERVICE_ADD "
-							+ SERVDISC_TYPE + " "
-							+ SERVDISC_VERS + " "
-							+ "name:" + name + "::"
-							+ "service:" + service;
-			this->p2pCommand(cmd);
+			this->p2pCommand("P2P_SERVICE_ADD "
+								+ SERVDISC_TYPE + " "
+								+ SERVDISC_VERS + " "
+								+ "name:" + name + "::"
+								+ "service:" + service);
 			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
@@ -202,11 +176,22 @@ namespace wifip2p {
 		}
 	}
 
-	void listen() throw (SupplicantHandleException);
+	void SupplicantHandle::listen() throw (SupplicantHandleException) {
+		;
+	}
 
-	void requestService(Peer peer, string service) throw (SupplicantHandleException);
+	void SupplicantHandle::requestService(string service) throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("P2P_SERV_DISC_REQ "
+								+ BROADCAST
+								+ SERVDISC_TYPE
+								+ SERVDISC_VERS
+								+ service);
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
 
-	void requestService(string service) throw (SupplicantHandleException);
 
 	/**
 	 * Creates a peering between this local and wpa_s controlled WNIC and Peer peer.
@@ -218,7 +203,7 @@ namespace wifip2p {
 	 */
 	void SupplicantHandle::connectToPeer(Peer peer) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_CONNECT " + peer.getMacAddr() + " PBC");
+			this->p2pCommand("P2P_CONNECT " + peer.getMacAddr() + " pbc");
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -243,11 +228,12 @@ namespace wifip2p {
 
 
 	/**
-	 * TODO Look carefully whether the command requires all UPPERCASE writing
-	 * 	or not.
-	 *
 	 * @cmd: 	Command string, to be transmitted to wpa_s. See wpa_s documentation
 	 * 				for possible commands.
+	 * 			IT IS OF HIGHEST IMPORTANCE, to handing over everything except the actual
+	 * 				command - which is only the very first part of each such statement -
+	 * 				and freely to be defined names, e.g. an actual device name, in all-lower
+	 * 				case letters! Otherwise, wpa_s will fail executing the command.
 	 * Returns: true or false, whether the command may be initiated successfully
 	 * 				or not.
 	 */
@@ -260,26 +246,30 @@ namespace wifip2p {
 		size_t 	reply_len = sizeof(reply_buf) - 1;
 
 		int ret = wpa_ctrl_request((struct wpa_ctrl*) _handle,
-				cmd_p, cmd.length(),
-				*&reply_buf, &reply_len, NULL);
+					cmd_p, cmd.length(),
+					*&reply_buf, &reply_len, NULL);
 
-		if (ret == -1) {
+		if (ret == -1)
 			throw SupplicantHandleException("wpa_s ctrl_i/f; send or receive failed.");
-			return false;
-		}
-		if (ret == -2) {
+		if (ret == -2)
 			throw SupplicantHandleException("wpa_s ctrl_i/f; communication timed out.");
-			return false;
-		}
+
+		/**	May be uncommented for testing purposes, to enable getting insight into actual command
+		 * 	 and variable statuses, which would have been hidden by flying exceptions, in case
+		 * 	 of errors.
+		 */
+		//cout << cmd << endl;
+		//cout << "reply_buf: " << reply_buf << endl;
 
 		string reply(reply_buf, reply_len);
 
 		if (reply.substr(0, reply_len -1) == "FAIL") {
-			throw SupplicantHandleException("wpa_s was not able to initiate " + cmd + " successfully.");
-			return false;
+			throw SupplicantHandleException("wpa_s was not able to initiate <" + cmd + "> successfully.");
 		} else {
 			return true;
 		}
+
+		return false;
 
 	}
 
@@ -288,15 +278,6 @@ namespace wifip2p {
 	 * Utility functions >>
 	 *
 	 */
-
-
-	void* SupplicantHandle::getHandle() {
-		return _handle;
-	}
-
-	int SupplicantHandle::getFDListen() {
-		return fd_listen;
-	}
 
 	char* SupplicantHandle::recvReply(char *replybuf, size_t reply_len) {
 

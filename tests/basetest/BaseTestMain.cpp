@@ -1,5 +1,6 @@
 #include "wifip2p/CoreEngine.h"
 #include "wifip2p/SupplicantHandle.h"
+#include "wifip2p/TestSupplicantHandle.h"
 #include "wifip2p/Peer.h"
 
 #include <list>
@@ -27,7 +28,7 @@ int main() {
 
 	try {
 
-		wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
+		//wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
 
 		list<string> s;
 
@@ -36,6 +37,11 @@ int main() {
 		//ce.reinitialize("/var/run/wpa_supplicant/wlan1", s);
 
 		wifip2p::Peer peer("Ab:Cf:09:23:45:7g", "STA_NAME");
+
+		wifip2p::TestSupplicantHandle supp(false);
+
+		supp.functionsTest("/var/run/wpa_supplicant/wlan0");
+
 
 		//std::cout << peer_a.getMacAddr() << std::endl;
 		//wifip2p::Peer peer_b("ab;cd:01:23:45:78");

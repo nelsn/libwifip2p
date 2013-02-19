@@ -46,14 +46,16 @@ public:
 	SupplicantHandle(bool monitor);
 	virtual ~SupplicantHandle();
 
-	void funcTest() throw (SupplicantHandleException);
-
 	void open(const char *ctrl_path) throw (SupplicantHandleException);
 	void init(string name, list<string> services) throw (SupplicantHandleException);
 
 	//----------
-	void* getHandle();
-	int getFDListen();
+
+	//void* getHandle();
+	/* Probably not needed, hence CoreEngine.listen() calls wpamon.listen() which then
+	 *  does everything needed SupplicantHandle internally.
+	 */
+	//int getFDListen();
 
 	char* recvReply(char *replybuf, size_t reply_len);
 	char* recvReply();
@@ -62,8 +64,9 @@ public:
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
 	void listen() throw (SupplicantHandleException);
-	void requestService(Peer peer, string service) throw (SupplicantHandleException);
 	void requestService(string service) throw (SupplicantHandleException);
+	//void requestService(Peer peer, string service) throw (SupplicantHandleException);
+	//void requestServiceCancel(Peer peer, string service) throw (SupplicantHandleException);
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
