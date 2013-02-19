@@ -41,8 +41,10 @@ int main() {
 		wifip2p::TestSupplicantHandle supp_cmd(false);
 		wifip2p::TestSupplicantHandle supp_mon(true);
 
-		supp_cmd.functionsTest("/var/run/wpa_supplicant/wlan0");
-		supp_mon.functionsTest("/var/run/wpa_supplicant/wlan0");
+		supp_cmd.functionsTest("/var/run/wpa_supplicant/wlan1");
+		supp_mon.functionsTest("/var/run/wpa_supplicant/wlan1");
+
+		//supp_cmd.findPeersStop();
 
 
 

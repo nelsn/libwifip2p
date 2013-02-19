@@ -179,80 +179,43 @@ namespace wifip2p {
 	void SupplicantHandle::listen() throw (SupplicantHandleException) {
 		if (this->monitor_mode) {
 
-//			int res;
-//			fd_set rfds;
-//			struct timeval tv;
-//			char buf[256];
-//			size_t len;
-//
-//			while (true) {
-//				FD_ZERO(&rfds);
-//				FD_SET(fd_listen, &rfds);
-//				tv.tv_sec = 5;
-//				tv.tv_usec = 0;
-//				res = select(fd_listen + 1, &rfds, NULL, NULL, &tv);
-//				if (res < 0) { //&& errno != EINTR) {
-//					perror("select");
-//					break;
-//				}
-//
-//				if (FD_ISSET(fd_listen, &rfds))
-//					hostapd_cli_recv_pending(_handle, 0, 1);
-//				else {
-//					len = sizeof(buf) - 1;
-//					if (wpa_ctrl_request(ctrl, "PING", 4, buf, &len,
-//							hostapd_cli_action_process) < 0 ||
-//							len < 4 || os_memcmp(buf, "PONG", 4) != 0) {
-//						printf("hostapd did not reply to PING "
-//								"command - exiting\n");
-//						break;
-//					}
-//				}
-//			}
+			cout << "BLABLABLABLA" << endl;
 
-			/*
-			 *void WpaGui::receiveMsgs()
-			 *{
-			 *	char buf[256];
-			 *	size_t len;
-			 *
-			 *	while (monitor_conn && wpa_ctrl_pending(monitor_conn) > 0) {
-			 *		len = sizeof(buf) - 1;
-			 *		if (wpa_ctrl_recv(monitor_conn, buf, &len) == 0) {
-			 *			buf[len] = '\0';
-			 *			processMsg(buf);
-			 *		}
-			 *	}
-			 *}
-			 */
+			int x = wpa_ctrl_pending((struct wpa_ctrl*)_handle);
+			cout << "wpa_ctrl_pending results in: " << x << endl;
 
-			int ret_interval;
-			struct timeval timeout;
-			timeout.tv_usec = 0;
-			timeout.tv_sec  = 10;
 
-			char   reply_buf[256];
-			size_t reply_len = sizeof(reply_buf) - 1;
+			//void WpaGui::receiveMsgs()
 
-			fd_set read_fd;
+			char buf[256];
+			size_t len;
 
-			FD_SET(fd_listen, &read_fd);
-			ret_interval = select(fd_listen, &read_fd, NULL, NULL, &timeout);
+			int k = 0;
 
-			this->p2pCommand("SCAN");
+			while (true) {
 
-			do {
-				cout << "TesMsg" << endl;
+				if (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
 
-				//this->p2pCommand("SCAN_RESULTS");
+					len = sizeof(buf) - 1;
 
-				if (FD_ISSET(fd_listen, &read_fd)) {
-					wpa_ctrl_recv((struct wpa_ctrl *)_handle, *&reply_buf, &reply_len);
-					cout << reply_buf << endl;
-					break;
+					wpa_ctrl_recv((struct wpa_ctrl*)_handle, buf, &len);
+
+					k += 1;
+
+					cout << "Inner while-loop #" << k << endl;
+
+					//buf[len] = '\0';
+					string buffer(buf, len);
+					cout << buffer << endl;
+
+					if (k == 5)
+						break;
+
 				}
+			}
 
-			} while (ret_interval != 0);
+			cout << "After while" << endl;
+
 
 		} else {
 			// TODO is an exception really needed here?

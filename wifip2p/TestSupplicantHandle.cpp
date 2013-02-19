@@ -39,14 +39,15 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		 *	 (3) as no connection to any peer is established, there simply
 		 *	 		is no virtual P2P group interface which may be removed
 		 */
-		//this->findPeers();
+		this->findPeers();
 		//this->connectToPeer(p1);
 		//this->disconnect(conn);
 
+		this->listen();
 
 		this->findPeersStop();
 
-		this->listen();
+
 
 	} catch (SupplicantHandleException &ex) {
 		std::cerr << ex.what() << std::endl;
