@@ -176,6 +176,20 @@ namespace wifip2p {
 		}
 	}
 
+	/**
+	 * TODO Modifying method signature, maybe >>
+	 * 	Return: string of the fetched wpa_s reply. The handling, whether the reply
+	 * 			is of interest in the overall state machine and setting or not, will
+	 * 			then be handled in the explicit state of the respective CoreEngine.
+	 * 		Another possibility would be to >>
+	 *  Return: void and handling all the decision whether to call back any of the
+	 *  		external application's implementation of the WifiP2PInterface.
+	 *  		Here, it would be of interest if then the program jumps back into
+	 *  		the originating SupplicantHandle::listen() method, when, e.g. lead to a
+	 *  		WifiP2PInterface::peerFound(Peer p) --> CoreEngine::connect(Peer p).
+	 *  		(!) In turn, this procedure needs any SupplicantHandle to hold a
+	 *  			variable referring to the respective WifiP2PInterface implementation.
+	 */
 	void SupplicantHandle::listen() throw (SupplicantHandleException) {
 		if (this->monitor_mode) {
 
@@ -208,7 +222,7 @@ namespace wifip2p {
 					string buffer(buf, len);
 					cout << buffer << endl;
 
-					if (k == 5)
+					if (k == 10)
 						break;
 
 				}

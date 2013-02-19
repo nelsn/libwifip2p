@@ -29,7 +29,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		this->init("DevName", services);
 
 		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
-		NetworkIntf nic("wlan0");
+		NetworkIntf nic("p2p-wlan1-18");
 		Connection conn(p1, nic);
 
 		/** Must-fails as tested with non-P2P compatible device, i.e.
