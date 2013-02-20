@@ -17,6 +17,7 @@
 
 #include "wifip2p/Peer.h"
 #include "wifip2p/Connection.h"
+#include "wifip2p/WifiP2PInterface.h"
 
 using namespace std;
 
@@ -64,8 +65,7 @@ public:
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
 	void listen() throw (SupplicantHandleException);
-
-	void xlisten();
+	void listen(WifiP2PInterface* ext_if) throw (SupplicantHandleException);
 
 	void requestService(string service) throw (SupplicantHandleException);
 	//void requestService(Peer peer, string service) throw (SupplicantHandleException);
@@ -85,6 +85,8 @@ private:
 	bool addService(string name, string service) throw (SupplicantHandleException);
 
 	bool p2pCommand(string cmd) throw (SupplicantHandleException);
+
+	string extractEvent(char* buf);
 
 
 };

@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>	//recvReply FD operations accordingly to http://www.kernel.org/doc/man-pages/online/pages/man2/read.2.html
-#include "common/wpa_ctrl.h"
+#include <common/wpa_ctrl.h>
 
 using namespace std;
 
@@ -198,9 +198,6 @@ namespace wifip2p {
 			int x = wpa_ctrl_pending((struct wpa_ctrl*)_handle);
 			cout << "wpa_ctrl_pending results in: " << x << endl;
 
-
-			//void WpaGui::receiveMsgs()
-
 			char buf[256];
 			size_t len;
 
@@ -210,26 +207,33 @@ namespace wifip2p {
 
 				if (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
 
-					len = sizeof(buf) - 1;
+					len = sizeof(buf);
 
 					wpa_ctrl_recv((struct wpa_ctrl*)_handle, buf, &len);
 
-					k += 1;
-
-					cout << "Inner while-loop #" << k << endl;
-
-					//buf[len] = '\0';
 					string buffer(buf, len);
-					cout << buffer << endl;
+					string bufcmd(buf, 23);
+					//cout << buffer << "cut buffer --23 > " << bufcmd << endl;
 
-					if (k == 10)
+					if (!(bufcmd == "<3>CTRL-EVENT-BSS-ADDED"
+							&& bufcmd == "<3>CTRL-EVENT-BSS-REMOVED")) {
+						cout << "Inner while-loop #" << k << endl;
+						k += 1;
+						cout << buffer << endl;
+					}
+
+					string msg = extractEvent(buf);
+					for (int i=0; i<msg.length(); i++)
+						cout << "DECOMPOSITION_" << i << msg[i] << endl;
+
+					if (k == 1)
 						break;
 
 				}
 			}
 
-			cout << "After while" << endl;
 
+			cout << "After while" << endl;
 
 		} else {
 			// TODO is an exception really needed here?
@@ -237,30 +241,7 @@ namespace wifip2p {
 		}
 	}
 
-	void SupplicantHandle::xlisten() {
-        fd_set rfds;
-        struct timeval tv;
-        int retval;
-
-        /* Achte auf stdin (fd 0), um zu sehen, wenn es
-         * Eingaben gibt.
-         */
-        //FD_ZERO(&rfds);
-        FD_SET(fd_listen, &rfds);
-        /* Warte bis zu fünf Sekunden. */
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
-
-        retval = select(fd_listen, &rfds, NULL, NULL, &tv);
-        /* Verlaß Dich jetzt bloß nicht auf den Wert von tv! */
-
-        do {
-        	if (retval)
-        		cout << "Daten sind jetzt da." << endl;
-        	/* FD_ISSET(0, &rfds) müsste jetzt true sein. */
-        	else
-        		cout << "Keine Dateien innerhalb von fünf Sekunden." << endl;
-        } while (!retval);
+	void SupplicantHandle::listen(WifiP2PInterface* ext_if) throw (SupplicantHandleException) {
 
 	}
 
@@ -338,9 +319,9 @@ namespace wifip2p {
 		if (ret == -2)
 			throw SupplicantHandleException("wpa_s ctrl_i/f; communication timed out.");
 
-		/**	May be uncommented for testing purposes, to enable getting insight into actual command
-		 * 	 and variable statuses, which would have been hidden by flying exceptions, in case
-		 * 	 of errors.
+		/**	May be uncommented for testing purposes, to enable getting insight into actual
+		 * 	 command and variable statuses, which else would have been hidden by flying
+		 * 	 exceptions, in case of errors.
 		 */
 		//cout << cmd << endl;
 		//cout << "reply_buf: " << reply_buf << endl;
@@ -358,7 +339,47 @@ namespace wifip2p {
 	}
 
 
-	/*
+	/**
+	 * char: 	Awaits an unsolicited retrieved wpa_s event message for input.
+	 * Returns: Decomposed unsolicited wpa_s message, i.e. an array of strings, with
+	 * 			 each array element representing a, by ' ' (= blank) separated, value
+	 * 			 of the message. The first value representing within the returned
+	 * 			 string array represents the event type.
+	 */
+	string SupplicantHandle::extractEvent(char* buf) {
+		int x = 0;
+		for (int i = 0; i != '\0'; i++) {
+			if (buf[i] == ' ')
+				++x;
+		}
+
+		string event_dec[x];
+		char evnevtt[64];
+		int i = 3, j = 0, k = 0;
+
+		while (buf[j] != '\0') {
+			if (k == 0) {
+				for (; buf[i] != ' '; i++) {
+					evnevtt[j] = buf[i];
+					++j;
+				}
+				evnevtt[j + 1] = ' ';
+				event_dec[k] = evnevtt;
+				++k;
+			} else {
+				for (; buf[i] != ' '; i++) {
+					evnevtt[j] = buf[i];
+					++j;
+				}
+				evnevtt[j + 1] = ' ';
+				event_dec[k] = evnevtt;
+				++k;
+			}
+		}
+		return event_dec;
+	}
+
+/*
 	 * Utility functions >>
 	 *
 	 */
