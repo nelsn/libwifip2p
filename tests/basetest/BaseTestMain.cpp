@@ -1,7 +1,5 @@
 #include "wifip2p/SupplicantHandle.h"
 #include "wifip2p/Peer.h"
-#include "wifip2p/NetworkIntf.h"
-#include "wifip2p/CoreEngine.h"
 
 
 using namespace std;
@@ -27,17 +25,15 @@ int main() {
 
 	try {
 
-		wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
+		//wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
 
 		wifip2p::Peer peer("Ab:Cf:09:23:45:7g");
 
-		wifip2p::NetworkIntf wnic("wlan2");
-		std::cout << wnic.getIfname() << std::endl;
-
+		//std::cout << peer_a.getMacAddr() << std::endl;
 		//wifip2p::Peer peer_b("ab;cd:01:23:45:78");
 		//wifip2p::Peer peer_c("ab:cd:01:23:45:7");
 //
-		//wifip2p::SupplicantHandle wpa_out("/var/run/wpa_supplicant/wlan1", true);
+		wifip2p::SupplicantHandle wpa_out("/var/run/wpa_supplicant/wlan1", true);
 //		wifip2p::SupplicantHandle wpa_mon("/var/run/wpa_supplicant/wlan1", 1);
 //
 //		/*

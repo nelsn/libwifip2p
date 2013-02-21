@@ -9,10 +9,6 @@
 
 namespace wifip2p {
 
-Peer::Peer() {
-	;
-}
-
 Peer::Peer(std::string mac) throw (PeerException) {
 
 	this->mac_addr = mac;
