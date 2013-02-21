@@ -10,6 +10,7 @@
 #define SUPPLICANTHANDLE_H_
 
 #include <list>
+#include <vector>
 #include <string>
 
 #include <iostream>
@@ -86,7 +87,7 @@ private:
 
 	bool p2pCommand(string cmd) throw (SupplicantHandleException);
 
-	string msgDecompose(char* buf);
+	vector<string> msgDecompose(char* buf);
 
 
 };

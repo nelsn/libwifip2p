@@ -222,58 +222,14 @@ namespace wifip2p {
 						cout << buffer << endl;
 					}
 
+					msgDecompose(buf);
 
-					//string msg = extractEvent(buf);
+					vector<string> msg = msgDecompose(buf);
+					vector<string>::iterator it = msg.begin();
+					for (; it != msg.end(); ++it)
+						cout << *it << endl;
 
-
-					//BEGIN msgDeompose(char *msg)
-
-					//#PARTS-METHOD INPUT (msg)
-					//CREATE_STRING(msg), here: buffer
-					int y=1;
-					for (int i=0; i<buffer.length(); i++) {
-						//cout << "DECOMPOSITION_" << i << " symbol " << buffer[i] << endl;
-						if (buffer[i] == ' ' && i != buffer.length()-1) {
-							++y;
-							//cout << "[NEXT_PART]" << y << endl;
-						}
-					}
-					cout << "buffer consisting of " << y << " parts." << endl;
-					//#PARTS-METHOD RETURNS #PARTS(msg)
-
-					//CREATE STRING ARRAY OF SIZE #PARTS(msg)
-					string ret_str[y];
-
-					//DECOMPOSING msg
-					int i=0, dif;
-					size_t pos, npos;
-					npos = buffer.find(' ');
-					dif = npos - 3;
-					cout << "Position of first _ >> " << npos << endl;
-					ret_str[i] = buffer.substr(3, dif); //substr(startpos, steps)
-
-					cout << ret_str[i] << endl;
-					++i;
-
-					while (i<y) {
-						pos = npos;
-						npos = buffer.find(' ', pos+1);
-						dif = npos - pos - 1;
-						ret_str[i] = buffer.substr(pos+1, dif);
-						cout << ret_str[i] << endl;
-						//cout << "Positions of pos|npos >> " << pos << "|" << npos << endl;
-						++i;
-					}
-
-
-					//END msgDeompose(char *msg)
-
-
-
-
-					//cout << extractEvent(buf) << endl;
-
-					if (k == 10)
+					if (k == 6)
 						break;
 
 				}
@@ -387,72 +343,49 @@ namespace wifip2p {
 
 
 	/**
-	 * char: 	Awaits an unsolicited retrieved wpa_s event message for input.
-	 * Returns: Decomposed unsolicited wpa_s message, i.e. an array of strings, with
-	 * 			 each array element representing a, by ' ' (= blank) separated, value
-	 * 			 of the message. The first value representing within the returned
-	 * 			 string array represents the event type.
+	 * Decomposed the wpa_s message into an array of strings, with
+	 * 	each array element representing one of the message's values.
+	 * 	The first value within the returned string array represents
+	 * 	the event type while the following depend on that type.
+	 * @char: 	Awaits a wpa_s event message for input.
+	 * Returns: string array, [0] = msg type, [..]
 	 */
-	string SupplicantHandle::msgDecompose(char* buf) {
-		int x = 1;
-		for (int i = 0; i != '\0'; i++) {
-			if (buf[i] == ' ')
-				++x;
-		}
+	vector<string> SupplicantHandle::msgDecompose(char* buf) {
 
-		cout << x << endl;
-
-		string out("x was counted / ");
-
-		return out;
-
-		/*
 		string buffer(buf);
-		string buffer_ret[x];
 
-		int i=0;
-		size_t pos, npos;
-		pos = buffer.find(' ');
-		buffer_ret[i] = buffer.substr(3, pos);
-
-		do {
-			++i;
-			if (i != x) {
-				++pos;
-				npos = buffer.find(' ', pos);
-				buffer_ret[i] = buffer.substr(pos, npos);
-			}
-		} while (buffer[pos] != '\0');
-
-		return *buffer_ret;
-		 */
-
-		/*
-		string event_dec[x];
-		char evt[64];
-		int i = 3, j = 0, k = 0;
-
-		while (buf[j] != '\0') {
-			if (k == 0) {
-				for (; buf[i] != ' '; i++) {
-					evt[j] = buf[i];
-					++j;
-				}
-				evt[j + 1] = ' ';
-				event_dec[k] = evt;
+		int k=1;
+		for (int i=0; i<buffer.length(); i++) {
+			if (buffer[i] == ' ' && i != buffer.length()-1) 
 				++k;
-			} else {
-				for (; buf[i] != ' '; i++) {
-					evt[j] = buf[i];
-					++j;
-				}
-				evt[j + 1] = ' ';
-				event_dec[k] = evt;
-				++k;
-			}
 		}
-		return event_dec;
-		*/
+		
+		vector<string> ret_vec;
+		int i=0, dif;
+		size_t pos, npos;
+		npos = buffer.find(' ');
+		dif = npos - 3;
+
+		ret_vec.push_back(buffer.substr(3, dif)); //substr(startpos, steps)
+		++i;
+
+		while (i<k) {
+			pos = npos;
+			npos = buffer.find(' ', pos+1);
+			dif = npos - pos - 1;
+			ret_vec.push_back(buffer.substr(pos+1, dif));
+			++i;
+		}
+
+		/** Only for testing purposes. Uncomment to get insight on vector's
+		 * 	 values.
+		 */
+		//vector<string>::iterator it = ret_vec.begin();
+		//for (; it != ret_vec.end(); ++it)
+		//	cout << *it << endl;
+
+		return ret_vec;
+
 	}
 
 /*
