@@ -86,7 +86,7 @@ private:
 
 	bool p2pCommand(string cmd) throw (SupplicantHandleException);
 
-	string extractEvent(char* buf);
+	string msgDecompose(char* buf);
 
 
 };

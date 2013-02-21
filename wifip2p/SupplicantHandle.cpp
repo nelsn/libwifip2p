@@ -222,11 +222,58 @@ namespace wifip2p {
 						cout << buffer << endl;
 					}
 
-					string msg = extractEvent(buf);
-					for (int i=0; i<msg.length(); i++)
-						cout << "DECOMPOSITION_" << i << msg[i] << endl;
 
-					if (k == 1)
+					//string msg = extractEvent(buf);
+
+
+					//BEGIN msgDeompose(char *msg)
+
+					//#PARTS-METHOD INPUT (msg)
+					//CREATE_STRING(msg), here: buffer
+					int y=1;
+					for (int i=0; i<buffer.length(); i++) {
+						//cout << "DECOMPOSITION_" << i << " symbol " << buffer[i] << endl;
+						if (buffer[i] == ' ' && i != buffer.length()-1) {
+							++y;
+							//cout << "[NEXT_PART]" << y << endl;
+						}
+					}
+					cout << "buffer consisting of " << y << " parts." << endl;
+					//#PARTS-METHOD RETURNS #PARTS(msg)
+
+					//CREATE STRING ARRAY OF SIZE #PARTS(msg)
+					string ret_str[y];
+
+					//DECOMPOSING msg
+					int i=0, dif;
+					size_t pos, npos;
+					npos = buffer.find(' ');
+					dif = npos - 3;
+					cout << "Position of first _ >> " << npos << endl;
+					ret_str[i] = buffer.substr(3, dif); //substr(startpos, steps)
+
+					cout << ret_str[i] << endl;
+					++i;
+
+					while (i<y) {
+						pos = npos;
+						npos = buffer.find(' ', pos+1);
+						dif = npos - pos - 1;
+						ret_str[i] = buffer.substr(pos+1, dif);
+						cout << ret_str[i] << endl;
+						//cout << "Positions of pos|npos >> " << pos << "|" << npos << endl;
+						++i;
+					}
+
+
+					//END msgDeompose(char *msg)
+
+
+
+
+					//cout << extractEvent(buf) << endl;
+
+					if (k == 10)
 						break;
 
 				}
@@ -346,37 +393,66 @@ namespace wifip2p {
 	 * 			 of the message. The first value representing within the returned
 	 * 			 string array represents the event type.
 	 */
-	string SupplicantHandle::extractEvent(char* buf) {
-		int x = 0;
+	string SupplicantHandle::msgDecompose(char* buf) {
+		int x = 1;
 		for (int i = 0; i != '\0'; i++) {
 			if (buf[i] == ' ')
 				++x;
 		}
 
+		cout << x << endl;
+
+		string out("x was counted / ");
+
+		return out;
+
+		/*
+		string buffer(buf);
+		string buffer_ret[x];
+
+		int i=0;
+		size_t pos, npos;
+		pos = buffer.find(' ');
+		buffer_ret[i] = buffer.substr(3, pos);
+
+		do {
+			++i;
+			if (i != x) {
+				++pos;
+				npos = buffer.find(' ', pos);
+				buffer_ret[i] = buffer.substr(pos, npos);
+			}
+		} while (buffer[pos] != '\0');
+
+		return *buffer_ret;
+		 */
+
+		/*
 		string event_dec[x];
-		char evnevtt[64];
+		char evt[64];
 		int i = 3, j = 0, k = 0;
 
 		while (buf[j] != '\0') {
 			if (k == 0) {
 				for (; buf[i] != ' '; i++) {
-					evnevtt[j] = buf[i];
+					evt[j] = buf[i];
 					++j;
 				}
-				evnevtt[j + 1] = ' ';
-				event_dec[k] = evnevtt;
+				evt[j + 1] = ' ';
+				event_dec[k] = evt;
 				++k;
 			} else {
 				for (; buf[i] != ' '; i++) {
-					evnevtt[j] = buf[i];
+					evt[j] = buf[i];
 					++j;
 				}
-				evnevtt[j + 1] = ' ';
-				event_dec[k] = evnevtt;
+				evt[j + 1] = ' ';
+				event_dec[k] = evt;
 				++k;
 			}
 		}
 		return event_dec;
+		*/
 	}
 
 /*
