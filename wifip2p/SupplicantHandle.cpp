@@ -190,7 +190,7 @@ namespace wifip2p {
 	 *  		(!) In turn, this procedure needs any SupplicantHandle to hold a
 	 *  			variable referring to the respective WifiP2PInterface implementation.
 	 */
-	void SupplicantHandle::listen() throw (SupplicantHandleException) {
+	void SupplicantHandle::listen(list<Peer> *peers, WifiP2PInterface *ext_if) throw (SupplicantHandleException) {
 		if (this->monitor_mode) {
 
 			cout << "BLABLABLABLA" << endl;
@@ -218,18 +218,59 @@ namespace wifip2p {
 					if (!(bufcmd == "<3>CTRL-EVENT-BSS-ADDED"
 							&& bufcmd == "<3>CTRL-EVENT-BSS-REMOVED")) {
 						cout << "Inner while-loop #" << k << endl;
-						k += 1;
+
 						cout << buffer << endl;
 					}
 
-					msgDecompose(buf);
-
 					vector<string> msg = msgDecompose(buf);
-					vector<string>::iterator it = msg.begin();
-					for (; it != msg.end(); ++it)
-						cout << *it << endl;
 
-					if (k == 6)
+					//EVENT >> p2p_device_found
+					if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
+
+						string mac(msg.at(1));
+						string name = msg.at(4).substr(6, msg.at(4).length() - 7);
+
+						Peer p(mac, name);
+
+						list<Peer>::iterator jt = peers->begin();
+						bool in_list = false;
+
+						for (; jt != peers->end(); ++jt) {
+							cout << jt->getName() << " :: " << jt->getMacAddr() << endl;
+							if (jt->getName() == p.getName()) {
+								if (jt->getMacAddr() == p.getMacAddr())
+									in_list = true;
+							}
+						}
+
+						if (!in_list) {
+							peers->push_back(p);
+							cout << " pushed to list" << endl;
+						}
+
+						++k;
+					}
+
+					//EVENT >> p2p_group_started (i.e. conn_established)
+					if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
+						;
+					}
+
+					//EVENT >> catch(group_formation_failure)
+
+
+					//EVENT >> retrieved_service_request
+					if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
+						;
+					}
+
+					//EVENT >> retrieved_service_response
+					if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
+						;
+					}
+
+
+					if (k == 1)
 						break;
 
 				}
@@ -364,7 +405,10 @@ namespace wifip2p {
 		int i=0, dif;
 		size_t pos, npos;
 		npos = buffer.find(' ');
-		dif = npos - 3;
+
+		/** [+1] in order to additionally fetch the ending-blank			*
+		 * 	[-3] in order to equalize the event msgs' introductory "<3>" 	*/
+		dif = (npos + 1) - 3;
 
 		ret_vec.push_back(buffer.substr(3, dif)); //substr(startpos, steps)
 		++i;

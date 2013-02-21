@@ -31,6 +31,35 @@ void CoreEngine::run() {
 	wpasup.open(this->ctrl_path.c_str());
 	wpamon.open(this->ctrl_path.c_str());
 	wpasup.init(this->name, this->services);
+
+	bool running = true;
+
+	while (running) {
+
+		switch(actual_state) {
+
+		case ST_IDLE:
+
+			break;
+
+		case ST_SCAN:
+
+			break;
+
+		case ST_SREQ:
+
+			break;
+
+		case ST_CONN:
+
+			break;
+
+		default:
+
+			break;
+
+		}
+	}
 }
 
 void CoreEngine::connect(wifip2p::Peer peer) {

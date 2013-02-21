@@ -65,7 +65,7 @@ public:
 
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
-	void listen() throw (SupplicantHandleException);
+	void listen(list<Peer> *peers, WifiP2PInterface *ext_if) throw (SupplicantHandleException);
 	void listen(WifiP2PInterface* ext_if) throw (SupplicantHandleException);
 
 	void requestService(string service) throw (SupplicantHandleException);
