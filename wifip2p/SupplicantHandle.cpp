@@ -285,10 +285,6 @@ namespace wifip2p {
 		}
 	}
 
-	void SupplicantHandle::listen(WifiP2PInterface* ext_if) throw (SupplicantHandleException) {
-
-	}
-
 	void SupplicantHandle::requestService(string service) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_SERV_DISC_REQ "
@@ -436,39 +432,6 @@ namespace wifip2p {
 	 * Utility functions >>
 	 *
 	 */
-
-	char* SupplicantHandle::recvReply(char *replybuf, size_t reply_len) {
-		//int res;
-		//struct timeval Timeout;
-
-		fd_set readfs;
-
-		FD_SET(fd_listen, &readfs);
-
-		if (FD_ISSET(fd_listen, &readfs)) {
-
-			wpa_ctrl_recv((struct wpa_ctrl *)_handle, *&replybuf, &reply_len);
-
-			return replybuf;
-
-		}
-	}
-
-	char* SupplicantHandle::recvReply() {
-
-		char *buf[128];
-		size_t buf_len = sizeof(buf) - 1;
-		ssize_t buf_read;
-
-		buf_read = read(fd_listen, *buf, buf_len);
-
-		if (buf_read >= 0) {
-			return *buf;
-		} else
-			return "FD read() was not successful.";
-
-	}
-
 
 	/**
 	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain socket.
