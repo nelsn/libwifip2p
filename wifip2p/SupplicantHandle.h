@@ -57,8 +57,11 @@ public:
 	void listen(list<Peer> *peers, WifiP2PInterface *ext_if) throw (SupplicantHandleException);
 
 	void requestService(string service) throw (SupplicantHandleException);
-	//void requestService(Peer peer, string service) throw (SupplicantHandleException);
-	//void requestServiceCancel(Peer peer, string service) throw (SupplicantHandleException);
+	// TODO IMPLEMENTATION
+	void requestService(Peer peer, string service) throw (SupplicantHandleException);
+	// TODO IMPLEMENTATION
+	void requestServiceCancel(string sdreq_id) throw (SupplicantHandleException);
+
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 

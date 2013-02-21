@@ -93,13 +93,15 @@ private:
 	string ctrl_path;
 	string name;
 	list<string> services;
+	list<string> sdreq_id;
 
 	list<Peer> peers;
 	list<Connection> connections;
 
-	WifiP2PInterface event_out;
+	WifiP2PInterface ext_if;
 
 	state actual_state;
+	Timer timer;
 
 
 	/* Methods/Member functions >>

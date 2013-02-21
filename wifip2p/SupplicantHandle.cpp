@@ -297,6 +297,17 @@ namespace wifip2p {
 		}
 	}
 
+	// TODO
+	void SupplicantHandle::requestService(Peer peer, string service) throw (SupplicantHandleException) {
+		;
+	}
+
+	// TODO
+	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
+		;
+	}
+
+
 
 	/**
 	 * Creates a peering between this local and wpa_s controlled WNIC and Peer peer.
