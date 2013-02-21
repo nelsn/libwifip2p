@@ -11,38 +11,43 @@
 #ifndef PEER_H_
 #define PEER_H_
 
+using namespace std;
+
 namespace wifip2p {
 
-class PeerException : public std::exception {
+class PeerException : public exception {
 public:
-	PeerException(const std::string &what) : _what(what) {
+	PeerException(const string &what) : _what(what) {
 	}
 
 	~PeerException() throw () {
 	}
 
-	std::string what() {
+	string what() {
 		return _what;
 	}
 
 private:
-	const std::string _what;
+	const string _what;
 };
 
 
 class Peer {
 
 public:
-	Peer(std::string) throw (PeerException); //Param std::string mac
+	Peer();
+	Peer(string mac, string name) throw (PeerException);
 	virtual ~Peer();
 
-	std::string getMacAddr();
+	string getMacAddr();
+	string getName();
 
 private:
-	std::string mac_addr;
+	string mac_addr;
+	string name;
 
-	bool setMacAddr(std::string mac);
-	bool validMacAddr(std::string mac);
+	bool setMacAddr(string mac);
+	bool validMacAddr(string mac);
 
 };
 

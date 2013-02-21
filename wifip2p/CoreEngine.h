@@ -8,11 +8,15 @@
 #ifndef COREENGINE_H_
 #define COREENGINE_H_
 
-#include <list.h>
+#include <list>
 #include <string>
 
 #include "wifip2p/SupplicantHandle.h"
+#include "wifip2p/WifiP2PInterface.h"
+#include "wifip2p/Timer.h"
+#include "wifip2p/Connection.h"
 #include "wifip2p/Peer.h"
+#include "wifip2p/NetworkIntf.h"
 
 using namespace std;
 
@@ -41,7 +45,7 @@ public:
 	/* Constructors, destructors >>
 	 *
 	 */
-	CoreEngine(const char *ctrl_path, string name) throw (CoreEngineException);
+	CoreEngine(string ctrl_path, string name);
 	virtual ~CoreEngine();
 
 	/* Member variables >>
@@ -64,8 +68,7 @@ public:
 
 	void setName(string name);
 
-	void reinitialize(const char* ctrl_path);
-	void reinitialize(const char* ctrl_path, list<string> services);
+	void reinitialize(string ctrl_path, list<string> services) throw (CoreEngineException);
 
 	bool addService(string service);
 	bool addService(list<string> services);
@@ -87,10 +90,11 @@ private:
 	/* Member variables >>
 	 *
 	 */
+	string ctrl_path;
 	string name;
 	list<string> services;
 
-	list::list<Peer> peers;
+	list<Peer> peers;
 	list<Connection> connections;
 
 	WifiP2PInterface event_out;
@@ -101,7 +105,7 @@ private:
 	/* Methods/Member functions >>
 	 *
 	 */
-	void initialize(const char* ctrl_path);
+	void initialize() throw (CoreEngineException);
 
 };
 

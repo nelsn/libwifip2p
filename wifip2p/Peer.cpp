@@ -7,18 +7,34 @@
 
 #include "wifip2p/Peer.h"
 
+using namespace std;
+
 namespace wifip2p {
 
-Peer::Peer(std::string mac) throw (PeerException) {
+Peer::Peer() {
+	// TODO
+	;
+}
+
+Peer::Peer(string mac, string name) throw (PeerException) {
 
 	this->mac_addr = mac;
+	this->name = name;
 
 	/*
-	if (!this->setMacAddr(mac))
-		throw PeerException("No valid MAC address. Note: "
-				"A valid MAC address is a 48bit hexdump with "
-				"every two byte pairs separated by a colon.");
-	*/
+	 * Yet taken out, because this address validating is not
+	 * 	necessarily needed.
+	 * 	The address gets assigned, but not by calling the
+	 * 	specifically defined private method.
+	 *
+	 * 	TODO (Either fixing and making this process work or deleting it.)
+	 *
+	 *	if (!this->setMacAddr(mac))
+	 *		throw PeerException("No valid MAC address. Note: "
+	 *				"A valid MAC address is a 48bit hexdump with "
+	 *				"every two byte pairs separated by a colon.");
+	 *
+	 */
 }
 
 Peer::~Peer() {
@@ -26,12 +42,18 @@ Peer::~Peer() {
 
 }
 
-
-std::string Peer::getMacAddr() {
+string Peer::getMacAddr() {
 	return this->mac_addr;
 }
 
-bool Peer::setMacAddr(std::string mac) {
+string Peer::getName() {
+	return this->name;
+}
+
+/**
+ * TODO (Deletion when never being used)
+ */
+bool Peer::setMacAddr(string mac) {
 	if (this->validMacAddr(mac)) {
 		this->mac_addr = mac;
 		return true;
@@ -46,28 +68,30 @@ bool Peer::setMacAddr(std::string mac) {
  * This method is called by setMacAddr(), which in turn is no more used, so far.
  * ATTENTION! Method is erroneous!!
  *
+ * TODO (Fixing and testing or deletion.)
+ *
  */
-bool Peer::validMacAddr(std::string mac) {
+bool Peer::validMacAddr(string mac) {
 	bool ret = true;
 	int x = mac.length();
-	std::cout << "mac: " << mac << "; mac_len: " << x << std::endl;
+	cout << "mac: " << mac << "; mac_len: " << x << endl;
 	if (mac.length() == 17) {
 		for (int i=0; i<17; i++) {
-			std::cout << "LOOP: " << (char) mac[i] << (int) mac[i] << std::endl;
+			cout << "LOOP: " << (char) mac[i] << (int) mac[i] << endl;
 			int s = mac[i];
 			if (i == 2 || i == 5 || i == 8 || i == 11 || i == 14) {
 				if (s != 58){
-					std::cout << "INNERPART_KOTZ_i:" << (int) mac[i] << (char) mac[i] << i << std::endl;
+					cout << "INNERPART_KOTZ_i:" << (int) mac[i] << (char) mac[i] << i << endl;
 					return false;
 				}
 			} else {
-				std::cout << s << std::endl;
+				cout << s << endl;
 				if ((48 <= s <= 57) || (65 <= s <= 70) || (97 <= s <= 102)) {
-					std::cout << "INNERPART" << std::endl;
+					cout << "INNERPART" << endl;
 					continue;
 				}
 				else {
-					std::cout << "RAUS" << std::endl;
+					cout << "RAUS" << endl;
 					return false;
 					}
 			}
