@@ -36,8 +36,6 @@ int main() {
 
 		//ce.reinitialize("/var/run/wpa_supplicant/wlan1", s);
 
-		wifip2p::Peer peer("Ab:Cf:09:23:45:7g", "STA_NAME");
-
 		wifip2p::TestSupplicantHandle supp_cmd(false);
 		wifip2p::TestSupplicantHandle supp_mon(true);
 

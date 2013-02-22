@@ -91,9 +91,13 @@ namespace wifip2p {
 	}
 
 	/**
+	 * Initializes wpa_s beyond *_handle, i.e. sets the respective device name
+	 * 	through cfg/mac80211, flushes all yet registered services, adds all services
+	 * 	as handed over with list<string> services.
+	 *
 	 * @name: 	  The hardware interface's name, as to be set by wpa_s.
-	 * @services: The services, as to be registered by wpa_s for being able to
-	 * 			   respond, if any regarding requests come in.
+	 * @services: The services, as to be registered at wpa_s for being able to
+	 * 			   respond, in case of any regarding requests.
 	 */
 	void SupplicantHandle::init(string name, list<string> services) throw (SupplicantHandleException) {
 
@@ -114,13 +118,15 @@ namespace wifip2p {
 
 
 	/**
+	 * TODO <Description>
+	 *
 	 * @name: 	The name as to be set for the device, controlled by this wpa_s.
 	 * Returns: true, if device name is set; false, else. Throws exception on error.
 	 *
 	 */
 	bool SupplicantHandle::setDeviceName(string name) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("SET device_name " + name);
+			this->p2pCommand("SET device_name " + name, NULL);
 			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
@@ -130,7 +136,7 @@ namespace wifip2p {
 
 	bool SupplicantHandle::flushServices() throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_SERVICE_FLUSH");
+			this->p2pCommand("P2P_SERVICE_FLUSH", NULL);
 			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
@@ -144,7 +150,7 @@ namespace wifip2p {
 								+ SERVDISC_TYPE + " "
 								+ SERVDISC_VERS + " "
 								+ "name:" + name + "::"
-								+ "service:" + service);
+								+ "service:" + service,	NULL);
 			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
@@ -158,7 +164,7 @@ namespace wifip2p {
 	 */
 	void SupplicantHandle::findPeers() throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_FIND");
+			this->p2pCommand("P2P_FIND", NULL);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -170,14 +176,17 @@ namespace wifip2p {
 	 */
 	void SupplicantHandle::findPeersStop() throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_STOP_FIND");
+			this->p2pCommand("P2P_STOP_FIND", NULL);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
 	}
 
 	/**
-	 * TODO Modifying method signature, maybe >>
+	 * TODO <Description>
+	 *
+	 * TODO <Signature-Description>
+	 *
 	 * 	Return: string of the fetched wpa_s reply. The handling, whether the reply
 	 * 			is of interest in the overall state machine and setting or not, will
 	 * 			then be handled in the explicit state of the respective CoreEngine.
@@ -285,13 +294,37 @@ namespace wifip2p {
 		}
 	}
 
-	void SupplicantHandle::requestService(string service) throw (SupplicantHandleException) {
+	/**
+	 * Initiates a fully broadcast upnp service request at wpa_s, i.e. its
+	 * 	destination address is 00:00:00:00:00:00.
+	 *
+	 * @service   The string to be requested for; according to upnp the this
+	 * 			   string represents the ST-Field (Search_Target) of its
+	 * 			   respective M-SEARCH request.
+	 * @*sdreq_id Pointer enabling ::requestService() to call back a list<string>
+	 * 			   and ::push_back() the wpa_s returned service_request_id.
+	 * 			   This id is later needed by wpa_s to cancel the request. If not
+	 * 			   canceled, the request will be potentially broadcast for ever
+	 * 			   -- though no more considered (and replied) by peers which were
+	 * 			   able to handle it properly. But others would be penetrated.
+	 */
+	void SupplicantHandle::requestService(string service, list<string> *sdreq_id) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_SERV_DISC_REQ "
-								+ BROADCAST
-								+ SERVDISC_TYPE
-								+ SERVDISC_VERS
-								+ service);
+			if (sdreq_id != NULL) {
+				string returned_id;
+				this->p2pCommand("P2P_SERV_DISC_REQ "
+						+ BROADCAST
+						+ SERVDISC_TYPE
+						+ SERVDISC_VERS
+						+ service, &returned_id);
+				sdreq_id->push_back(returned_id);
+			} else {
+				this->p2pCommand("P2P_SERV_DISC_REQ "
+						+ BROADCAST
+						+ SERVDISC_TYPE
+						+ SERVDISC_VERS
+						+ service, NULL);
+			}
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -311,15 +344,16 @@ namespace wifip2p {
 
 	/**
 	 * Creates a peering between this local and wpa_s controlled WNIC and Peer peer.
-	 * The method uses WPS Push Button Configuration (PBC). wpa_s will create a
-	 *   virtual WNIC per each connection which is going to be established. The virtual
-	 *   interface will be called "p2p-<HW-IF-name>-<#count>".
-	 * @Peer the peer to which wpa_s should initiate a connection.
+	 * 	The method uses WPS Push Button Configuration (PBC). wpa_s will create a
+	 *  virtual WNIC per each connection which is going to be established. The virtual
+	 *  interface will be called "p2p-<HW-IF-name>-<#count>".
+	 *
+	 * @peer the peer to which wpa_s should initiate a connection.
 	 *
 	 */
 	void SupplicantHandle::connectToPeer(Peer peer) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_CONNECT " + peer.getMacAddr() + " pbc");
+			this->p2pCommand("P2P_CONNECT " + peer.getMacAddr() + " pbc", NULL);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -335,7 +369,7 @@ namespace wifip2p {
 	 */
 	void SupplicantHandle::disconnect(Connection conn) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_GROUP_REMOVE " + conn.getNetworkIntf().getName());
+			this->p2pCommand("P2P_GROUP_REMOVE " + conn.getNetworkIntf().getName(), NULL);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -344,6 +378,8 @@ namespace wifip2p {
 
 
 	/**
+	 * TODO <Description>
+	 *
 	 * @cmd: 	Command string, to be transmitted to wpa_s. See wpa_s documentation
 	 * 				for possible commands.
 	 * 			IT IS OF HIGHEST IMPORTANCE, to handing over everything except the actual
@@ -353,7 +389,7 @@ namespace wifip2p {
 	 * Returns: true or false, whether the command may be initiated successfully
 	 * 				or not.
 	 */
-	bool SupplicantHandle::p2pCommand(string cmd) throw (SupplicantHandleException) {
+	bool SupplicantHandle::p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException) {
 
 		const char *cmd_p;
 		cmd_p = cmd.c_str();
@@ -382,6 +418,8 @@ namespace wifip2p {
 		if (reply.substr(0, reply_len -1) == "FAIL") {
 			throw SupplicantHandleException("wpa_s was not able to initiate <" + cmd + "> successfully.");
 		} else {
+			if (direct_feedback != NULL)
+				direct_feedback = &reply;
 			return true;
 		}
 
@@ -395,6 +433,7 @@ namespace wifip2p {
 	 * 	each array element representing one of the message's values.
 	 * 	The first value within the returned string array represents
 	 * 	the event type while the following depend on that type.
+	 *
 	 * @char: 	Awaits a wpa_s event message for input.
 	 * Returns: string array, [0] = msg type, [..]
 	 */
@@ -448,7 +487,9 @@ namespace wifip2p {
 	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain socket.
 	 * Initializes the attached domain sockets FileDescriptor as returned by the
 	 * 	proper wpa_s control_i/f's function.
+	 *
 	 * Returns: true, if the monitor may be set. false, otherwise.
+	 *
 	 */
 	bool SupplicantHandle::setMonitorMode() throw (SupplicantHandleException) {
 		if (wpa_ctrl_attach((struct wpa_ctrl*) (_handle)) == 0) {
