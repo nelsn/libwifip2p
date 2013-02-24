@@ -11,10 +11,11 @@ using namespace std;
 
 namespace wifip2p {
 
-CoreEngine::CoreEngine(string ctrl_path, string name)
+CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface *ext_if)
 		: wpasup(false),
 		  wpamon(true),
 		  actual_state(ST_IDLE),
+		  ext_if(ext_if),
 		  name(name),
 		  ctrl_path(ctrl_path) {
 
@@ -45,7 +46,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(2, 0);
 
-				wpamon.listen(&peers, &ext_if);
+				wpamon.listen(&peers, ext_if);
 
 			} while(!timer.timeout());
 
@@ -63,7 +64,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(1, 0);
 
-				wpamon.listen(&peers, &ext_if);
+				wpamon.listen(&peers, ext_if);
 
 			} while(!timer.timeout());
 
@@ -90,7 +91,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(1, 0);
 
-				wpamon.listen(&peers, &ext_if);
+				wpamon.listen(&peers, ext_if);
 
 			} while(!timer.timeout());
 
@@ -107,7 +108,7 @@ void CoreEngine::run() {
 
 			while (!connections.empty()) {
 
-				wpamon.listen(&peers, &ext_if);
+				wpamon.listen(&peers, ext_if);
 
 			}
 
@@ -123,7 +124,14 @@ void CoreEngine::run() {
 }
 
 void CoreEngine::connect(wifip2p::Peer peer) {
-	;
+
+	wpasup.connectToPeer(peer);
+
+	while (true) {
+
+		//wpamon.listen();
+
+	}
 }
 
 void CoreEngine::disconnect(wifip2p::Connection connection) {

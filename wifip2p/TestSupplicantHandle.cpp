@@ -6,6 +6,7 @@
  */
 
 #include "wifip2p/TestSupplicantHandle.h"
+#include "wifip2p/TestExternalWifiP2P.cpp"
 
 namespace wifip2p {
 
@@ -38,7 +39,8 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		NetworkIntf nic("p2p-wlan1-18");
 		Connection conn(p1, nic);
 
-		WifiP2PInterface ext_if_dummy;
+		TestExternalWifiP2P ext_if_dummy();
+		WifiP2PInterface wipi();
 
 		/** Must-fails as tested with non-P2P compatible device, i.e.
 		 *	 (1) p2p_find not possible

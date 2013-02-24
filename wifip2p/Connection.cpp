@@ -9,13 +9,15 @@
 
 namespace wifip2p {
 
-Connection::Connection() {
-	;
+Connection::Connection(NetworkIntf nic)
+	: nic(nic) {
+
 }
 
-Connection::Connection(Peer peer, NetworkIntf nic) {
-	this->peer = peer;
-	this->nic = nic;
+Connection::Connection(Peer peer, NetworkIntf nic)
+	: peer(peer),
+	  nic(nic) {
+
 }
 
 Connection::~Connection() {
@@ -24,6 +26,10 @@ Connection::~Connection() {
 
 Peer Connection::getPeer() {
 	return this->peer;
+}
+
+void Connection::setPeer(Peer peer) {
+	this->peer = peer;
 }
 
 NetworkIntf Connection::getNetworkIntf() {

@@ -199,7 +199,9 @@ namespace wifip2p {
 	 *  		(!) In turn, this procedure needs any SupplicantHandle to hold a
 	 *  			variable referring to the respective WifiP2PInterface implementation.
 	 */
-	void SupplicantHandle::listen(list<Peer> *peers, WifiP2PInterface *ext_if) throw (SupplicantHandleException) {
+	void SupplicantHandle::listen(list<Peer> *peers, list<Connection> *connections,
+			WifiP2PInterface *ext_if) throw (SupplicantHandleException) {
+
 		if (this->monitor_mode) {
 
 			cout << "BLABLABLABLA" << endl;
@@ -262,11 +264,34 @@ namespace wifip2p {
 
 					//EVENT >> p2p_group_started (i.e. conn_established)
 					if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
-						;
+						if (msg.at(2) == "GO") {
+							NetworkIntf go_nic(msg.at(1));
+							Connection new_conn(go_nic);
+							connections->push_front(new_conn);
+						}
 					}
 
-					//EVENT >> catch(group_formation_failure)
+					//EVENT >> ap_sta_connected (i.e. latest connection participant)
+					// TODO check if AP_STA_CONNECTED may be read without any error!!
+					if (msg.at(0) == AP_STA_CONNECTED) {
+						list<Peer>::iterator it = peers->begin();
+						for (; it != peers->end(); ++it) {
+							if (it->getMacAddr() == msg.at(1)) {
+								connections->front().setPeer(*it);
+								break;
+							}
+						}
+					}
 
+					//EVENT >> group_formation_failure
+					/*if (msg.at(0) == P2P_EVENT_GO_NEG_FAILURE
+							|| msg.at(0) == P2P_EVENT_GROUP_FORMATION_FAILURE) {
+						list<Peer>::iterator it = peers->begin();
+						for (; it != peers->end(); ++it) {
+							if (*it->getName() == )
+						}
+
+					}*/
 
 					//EVENT >> retrieved_service_request
 					if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
@@ -274,8 +299,56 @@ namespace wifip2p {
 					}
 
 					//EVENT >> retrieved_service_response
+					/*
+					 * The return of not only the upnp sd_resp header with empty data
+					 * 	implies the specific peer to host at least on requested service.
+					 * 	An Iterator checks if that peer is already contained in the
+					 * 	peers list. If not, it pushes that peer to the list; else, remain
+					 * 	the list unchanged and call back ext_if.peerFound(Peer).
+					 * If only the upnp sd_resp header with empty data is returned, which
+					 * 	implies the service not being hosted at that peer, the specific
+					 * 	peer will be deleted from the peers list.
+					 *
+					 */
 					if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
-						;
+						if (msg.at(3) != "0300020101") {
+							list<Peer>::iterator it = peers->begin();
+							bool in_list = false;
+							for (; it != peers->end(); ++it) {
+								if (it->getMacAddr() == msg.at(1)) {
+									ext_if->peerFound(*it);
+									in_list = true;
+									break;
+								} else {
+									continue;
+								}
+							}
+							if (in_list == false) {
+								// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
+								/*
+								 * This case is rather unrealistic, as it is likely be
+								 * 	assumed that any peer is discovered with it's name
+								 * 	stored beside the MAC address in a proper Peer object
+								 * 	right before any sd_resp will be received.
+								 * 	Following this, the very most of the peers, as being
+								 * 	candidates for potentially connections, will have been
+								 * 	discovered already and are stored locally, with proper
+								 * 	MAC and peer names.
+								 * Implementing the above method would solve this issue
+								 * 	completely.
+								 *
+								 */
+								Peer p(msg.at(1), "NoName");
+								peers->push_back(p);
+								ext_if->peerFound(p);
+							}
+						} else {
+							list<Peer>::iterator it = peers->begin();
+							for (; it != peers->end(); ++it) {
+								if (it->getMacAddr() == msg.at(1))
+									peers->erase(it);
+							}
+						}
 					}
 
 
@@ -295,18 +368,18 @@ namespace wifip2p {
 	}
 
 	/**
-	 * Initiates a fully broadcast upnp service request at wpa_s, i.e. its
+	 * Initiates a upnp service request at wpa_s as fully broadcast, i.e. its
 	 * 	destination address is 00:00:00:00:00:00.
 	 *
 	 * @service   The string to be requested for; according to upnp the this
 	 * 			   string represents the ST-Field (Search_Target) of its
 	 * 			   respective M-SEARCH request.
 	 * @*sdreq_id Pointer enabling ::requestService() to call back a list<string>
-	 * 			   and ::push_back() the wpa_s returned service_request_id.
+	 * 			   and ::push_back() the wpa_s' returned service_request_id.
 	 * 			   This id is later needed by wpa_s to cancel the request. If not
-	 * 			   canceled, the request will be potentially broadcast for ever
-	 * 			   -- though no more considered (and replied) by peers which were
-	 * 			   able to handle it properly. But others would be penetrated.
+	 * 			   canceled, the request will be broadcast potentially for ever
+	 * 			   -- though no more considered (and replied) by peers, which were
+	 * 			   able to handle it properly; others would be penetrated.
 	 */
 	void SupplicantHandle::requestService(string service, list<string> *sdreq_id) throw (SupplicantHandleException) {
 		try {
@@ -380,14 +453,17 @@ namespace wifip2p {
 	/**
 	 * TODO <Description>
 	 *
-	 * @cmd: 	Command string, to be transmitted to wpa_s. See wpa_s documentation
-	 * 				for possible commands.
-	 * 			IT IS OF HIGHEST IMPORTANCE, to handing over everything except the actual
-	 * 				command - which is only the very first part of each such statement -
-	 * 				and freely to be defined names, e.g. an actual device name, in all-lower
-	 * 				case letters! Otherwise, wpa_s will fail executing the command.
-	 * Returns: true or false, whether the command may be initiated successfully
-	 * 				or not.
+	 * @cmd: 			  Command string, to be transmitted to wpa_s. See wpa_s
+	 * 					   documentation for possible commands.
+	 * 					  IT IS OF HIGHEST IMPORTANCE, to handing over everything
+	 * 					   except the actual command - which is only the very
+	 * 					   first part of each such statement - and freely to be
+	 * 					   defined names, e.g. an actual device name, in all-lower
+	 * 					   case letters! Otherwise, wpa_s will fail executing
+	 * 					   the command.
+	 * @*direct_feedback: TODO <Description>
+	 * Returns: 		  true or false, whether the command may be initiated
+	 * 					   successfully or not.
 	 */
 	bool SupplicantHandle::p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException) {
 
@@ -478,10 +554,22 @@ namespace wifip2p {
 
 	}
 
-/*
-	 * Utility functions >>
+	/**
+	 * TODO <Implementation, Priority: low>
+	 * TODO <Description>
+	 *
+	 * @string: The TLV received as service discovery response. Independently
+	 * 			 of wpa_s' specifications, this method may actually only deal with
+	 * 			 service entries at opposite stations, which do not overflow the
+	 * 			 total size of 65535 Byte, which equals FFFF as length in the
+	 * 			 respective TLV header. The original TLV length field is coded as
+	 * 			 2 Byte little endian hexdump value.
+	 * Return:
 	 *
 	 */
+	string SupplicantHandle::getPeerNameFromSDResp(string tlv) {
+		;
+	}
 
 	/**
 	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain socket.

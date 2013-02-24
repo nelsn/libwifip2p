@@ -15,11 +15,12 @@ namespace wifip2p {
 
 class Connection {
 public:
-	Connection();
+	Connection(NetworkIntf nic);
 	Connection(Peer peer, NetworkIntf nic);
 	virtual ~Connection();
 
 	Peer getPeer();
+	void setPeer(Peer peer);
 	NetworkIntf getNetworkIntf();
 
 private:

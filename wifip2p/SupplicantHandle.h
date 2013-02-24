@@ -54,7 +54,8 @@ public:
 
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
-	void listen(list<Peer> *peers, WifiP2PInterface *ext_if) throw (SupplicantHandleException);
+	void listen(list<Peer> *peers,
+			list<Connection> *connections, WifiP2PInterface *ext_if) throw (SupplicantHandleException);
 
 	void requestService(string service, list<string> *sdreq_id) throw (SupplicantHandleException);
 	// TODO IMPLEMENTATION
@@ -80,6 +81,9 @@ private:
 	bool p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException);
 
 	vector<string> msgDecompose(char* buf);
+
+	// TODO IMPLEMENTATIN (Priority: low)
+	string getPeerNameFromSDResp(string tlv);
 
 
 };
