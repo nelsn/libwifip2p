@@ -45,7 +45,7 @@ public:
 	/* Constructors, destructors >>
 	 *
 	 */
-	CoreEngine(string ctrl_path, string name, WifiP2PInterface *ext_if);
+	CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if);
 	virtual ~CoreEngine();
 
 	/* Member variables >>
@@ -98,7 +98,7 @@ private:
 	list<Peer> peers;
 	list<Connection> connections;
 
-	WifiP2PInterface *ext_if;
+	WifiP2PInterface &ext_if;
 
 	state actual_state;
 	Timer timer;

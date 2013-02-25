@@ -11,7 +11,7 @@ using namespace std;
 
 namespace wifip2p {
 
-CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface *ext_if)
+CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if)
 		: wpasup(false),
 		  wpamon(true),
 		  actual_state(ST_IDLE),
@@ -46,7 +46,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(2, 0);
 
-				wpamon.listen(&peers, ext_if);
+				wpamon.listen(peers, connections, ext_if);
 
 			} while(!timer.timeout());
 
@@ -64,7 +64,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(1, 0);
 
-				wpamon.listen(&peers, ext_if);
+				//wpamon.listen(&peers, ext_if);
 
 			} while(!timer.timeout());
 
@@ -91,7 +91,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(1, 0);
 
-				wpamon.listen(&peers, ext_if);
+				//wpamon.listen(&peers, ext_if);
 
 			} while(!timer.timeout());
 
@@ -108,7 +108,7 @@ void CoreEngine::run() {
 
 			while (!connections.empty()) {
 
-				wpamon.listen(&peers, ext_if);
+				//wpamon.listen(&peers, ext_if);
 
 			}
 

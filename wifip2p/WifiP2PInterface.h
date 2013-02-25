@@ -13,11 +13,16 @@
 
 namespace wifip2p {
 
+/**
+ * TODO ggf. doch .cpp file halten. dann ~WifiP2PInterface() = 0; in .h
+ * 	und iin .cpp die Adapter-Implementierung ~WifiP2PInterface() { };
+ *
+ */
 class WifiP2PInterface {
 public:
-	WifiP2PInterface();
-	virtual ~WifiP2PInterface();
+	virtual ~WifiP2PInterface() { };
 
+	virtual void peerFound() = 0;
 	virtual void peerFound(Peer peer) = 0;
 	virtual void connectionEstablished(Connection conn) = 0;
 	virtual void connectionLost(Connection conn) = 0;

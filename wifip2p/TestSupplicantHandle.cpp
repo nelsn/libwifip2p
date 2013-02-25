@@ -36,11 +36,12 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		peers.push_back(p1);
 		peers.push_back(p2);
 
+		list<Connection> connections;
+
 		NetworkIntf nic("p2p-wlan1-18");
 		Connection conn(p1, nic);
 
-		TestExternalWifiP2P ext_if_dummy();
-		WifiP2PInterface wipi();
+		TestExternalWifiP2P ext_if_dummy;
 
 		/** Must-fails as tested with non-P2P compatible device, i.e.
 		 *	 (1) p2p_find not possible
@@ -53,7 +54,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		//this->connectToPeer(p1);
 		//this->disconnect(conn);
 
-		this->listen(&peers, &ext_if_dummy);
+		this->listen(peers, connections, ext_if_dummy);
 
 		this->findPeersStop();
 

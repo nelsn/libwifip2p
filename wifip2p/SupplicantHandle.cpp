@@ -199,8 +199,8 @@ namespace wifip2p {
 	 *  		(!) In turn, this procedure needs any SupplicantHandle to hold a
 	 *  			variable referring to the respective WifiP2PInterface implementation.
 	 */
-	void SupplicantHandle::listen(list<Peer> *peers, list<Connection> *connections,
-			WifiP2PInterface *ext_if) throw (SupplicantHandleException) {
+	void SupplicantHandle::listen(list<Peer> &peers, list<Connection> &connections,
+			WifiP2PInterface &ext_if) throw (SupplicantHandleException) {
 
 		if (this->monitor_mode) {
 
@@ -243,10 +243,10 @@ namespace wifip2p {
 
 						Peer p(mac, name);
 
-						list<Peer>::iterator jt = peers->begin();
+						list<Peer>::iterator jt = peers.begin();
 						bool in_list = false;
 
-						for (; jt != peers->end(); ++jt) {
+						for (; jt != peers.end(); ++jt) {
 							cout << jt->getName() << " :: " << jt->getMacAddr() << endl;
 							if (jt->getName() == p.getName()) {
 								if (jt->getMacAddr() == p.getMacAddr())
@@ -255,8 +255,9 @@ namespace wifip2p {
 						}
 
 						if (!in_list) {
-							peers->push_back(p);
+							peers.push_back(p);
 							cout << " pushed to list" << endl;
+							ext_if.peerFound(p);
 						}
 
 						++k;
@@ -267,19 +268,75 @@ namespace wifip2p {
 						if (msg.at(2) == "GO") {
 							NetworkIntf go_nic(msg.at(1));
 							Connection new_conn(go_nic);
-							connections->push_front(new_conn);
+							connections.push_front(new_conn);
 						}
 					}
 
 					//EVENT >> ap_sta_connected (i.e. latest connection participant)
 					// TODO check if AP_STA_CONNECTED may be read without any error!!
 					if (msg.at(0) == AP_STA_CONNECTED) {
-						list<Peer>::iterator it = peers->begin();
-						for (; it != peers->end(); ++it) {
+						list<Peer>::iterator it = peers.begin();
+						for (; it != peers.end(); ++it) {
 							if (it->getMacAddr() == msg.at(1)) {
-								connections->front().setPeer(*it);
+								connections.front().setPeer(*it);
 								break;
 							}
+						}
+					}
+
+					//EVENT >> ap_sta_disconnected
+					/*
+					 * Maybe the GO had removed the p2p_group or, after a longer timeout,
+					 * 	a connected non-GO station had removed its p2p_group_connection,
+					 * 	i.e. the corresponding virtual interface.
+					 *
+					 */
+					// TODO check if AP_STA_DISCONNECTED may be read without any error!!
+					if (msg.at(0) == AP_STA_DISCONNECTED) {
+						string mac_disconn = msg.at(2).substr(13);
+						list<Connection>::iterator it = connections.begin();
+						for (; it != connections.end(); ++it) {
+							if (it->getPeer().getMacAddr() == mac_disconn)
+								disconnect(*it);
+							else
+								continue;
+						}
+					}
+
+					//EVENT >> p2p_group_negotiation_request (i.e. conn_request)
+					//Connects immediately after a connection request was received at wpa_s.
+					if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
+						bool direct_connect = true;
+						if (direct_connect) {
+							bool in_list = false;
+							list<Peer>::iterator it = peers.begin();
+							for (; it != peers.end(); ++it) {
+								if (it->getMacAddr() == msg.at(1)) {
+									in_list = true;
+									break;
+								} else {
+									continue;
+								}
+							}
+							if (!in_list) {
+								Peer peer(msg.at(1), "NoName");
+								peers.push_back(peer);
+								connectToPeer(peer);
+							} else {
+								connectToPeer(*it);
+							}
+						}
+					}
+
+					//EVENT >> p2p_device_lost (device or connection lost for reasons unknown)
+					if (msg.at(0) == P2P_EVENT_DEVICE_LOST) {
+						string mac_lost = msg.at(1).substr(13);
+						list<Connection>::iterator it = connections.begin();
+						for (; it != connections.end(); ++it) {
+							if (it->getPeer().getMacAddr() == mac_lost)
+								disconnect(*it);
+							else
+								continue;
 						}
 					}
 
@@ -312,11 +369,11 @@ namespace wifip2p {
 					 */
 					if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
 						if (msg.at(3) != "0300020101") {
-							list<Peer>::iterator it = peers->begin();
+							list<Peer>::iterator it = peers.begin();
 							bool in_list = false;
-							for (; it != peers->end(); ++it) {
+							for (; it != peers.end(); ++it) {
 								if (it->getMacAddr() == msg.at(1)) {
-									ext_if->peerFound(*it);
+									ext_if.peerFound(*it);
 									in_list = true;
 									break;
 								} else {
@@ -339,14 +396,14 @@ namespace wifip2p {
 								 *
 								 */
 								Peer p(msg.at(1), "NoName");
-								peers->push_back(p);
-								ext_if->peerFound(p);
+								peers.push_back(p);
+								ext_if.peerFound(p);
 							}
 						} else {
-							list<Peer>::iterator it = peers->begin();
-							for (; it != peers->end(); ++it) {
+							list<Peer>::iterator it = peers.begin();
+							for (; it != peers.end(); ++it) {
 								if (it->getMacAddr() == msg.at(1))
-									peers->erase(it);
+									peers.erase(it);
 							}
 						}
 					}

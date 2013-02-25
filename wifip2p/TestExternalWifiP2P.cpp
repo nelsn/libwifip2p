@@ -12,14 +12,20 @@ using namespace std;
 namespace wifip2p {
 
 class TestExternalWifiP2P : public WifiP2PInterface {
-
+public:
 	TestExternalWifiP2P() {
 		;
 	}
 
-	void peerFound(Peer peer) {
+	void peerFound() {
 		cout << "Yeah, a Peer is found!!" << endl;
 	}
+
+	void peerFound(Peer peer) {
+		//cout << "Yeah, a Peer " << peer.getName() << " is found!!" << endl;
+		cout << "Yeah, a Peer is found!!" << endl;
+	}
+
 
 	void connectionEstablished(Connection conn) {
 		;
