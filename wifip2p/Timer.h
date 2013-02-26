@@ -8,13 +8,16 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
+//#include <ctime>
+
 namespace wifip2p {
 
 class Timer {
 public:
-	Timer();
+	Timer(int m, int s);
 	virtual ~Timer();
 
+	void start();
 	bool isRunning();
 	void setTimer(int m, int s);
 	bool timeout();
@@ -22,6 +25,8 @@ public:
 private:
 	int minutes;
 	int seconds;
+
+	//time_t timestamp;
 
 };
 

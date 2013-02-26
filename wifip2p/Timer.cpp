@@ -11,7 +11,7 @@ using namespace std;
 
 namespace wifip2p {
 
-Timer::Timer() {
+Timer::Timer(int m, int s) {
 	// TODO Auto-generated constructor stub
 
 }

@@ -42,6 +42,42 @@ Peer::~Peer() {
 
 }
 
+/**
+ * Matches the actual peer against the input parameter peer.
+ * Equality is explicitly defined as matching MAC addresses, as
+ *  a peer's name is not of any use regarding this issue.
+ *
+ * @peer:  peer to be checked for equality.
+ * Return: true or false, whether this = peer.
+ *
+ */
+bool Peer::equals(Peer peer) {
+	if (this->mac_addr == peer.mac_addr())
+		return true;
+	else
+		return false;
+}
+
+/**
+ * Awaits reference to a list<Peer> to check whether the actual
+ * 	peer is contained within or not.
+ *
+ * @peers: list<Peer> to being checked for containing the calling
+ * 			peer.
+ * Return: true, if the peer is contained within peers; else
+ * 			otherwise.
+ */
+bool Peer::inList(list<Peer> &peers) {
+	list<Peer>::iterator it = peers.begin();
+	for (; it != peers.end(); ++it) {
+		if (this->equals(*it))
+			return true;
+	}
+	return false;
+}
+
+
+
 string Peer::getMacAddr() {
 	return this->mac_addr;
 }

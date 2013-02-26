@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <list>
 #include <string>
 
 #ifndef PEER_H_
@@ -41,6 +42,9 @@ public:
 
 	string getMacAddr();
 	string getName();
+
+	bool equals(Peer peer);
+	bool inList(list<Peer> &peers);
 
 private:
 	string mac_addr;

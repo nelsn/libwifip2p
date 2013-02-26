@@ -209,127 +209,112 @@ namespace wifip2p {
 			if (x!=0)
 				cout << "Pending? " << x << endl;
 
-			//while (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
-			while (true) {
+			char buf[256];
+			size_t len;
 
-				char buf[256];
-				size_t len;
+			if (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
 
-				if (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
+				wpa_ctrl_recv((struct wpa_ctrl*)_handle, buf, &len);
+				vector<string> msg = msgDecompose(buf);
 
-					wpa_ctrl_recv((struct wpa_ctrl*)_handle, buf, &len);
-					vector<string> msg = msgDecompose(buf);
+				//for testing purposes: prints out every cmd's event-message
+				cout << msg.at(0) << endl;
 
-					//for testing purposes: prints out every cmd's event-message
-					//cout << msg.at(0) << endl;
+				//EVENT >> p2p_device_found
+				if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
 
-					//EVENT >> p2p_device_found
-					if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
+					string mac(msg.at(1));
+					string name = msg.at(4).substr(6, msg.at(4).length() - 7);
 
-						string mac(msg.at(1));
-						string name = msg.at(4).substr(6, msg.at(4).length() - 7);
+					Peer p(mac, name);
 
-						Peer p(mac, name);
+					if (!p.inList(peers)) {
+						peers.push_back(p);
+						cout << " pushed to list" << endl;
+					}
 
-						list<Peer>::iterator jt = peers.begin();
+					ext_if.peerFound(p);
+				}
+
+				//EVENT >> p2p_group_started (i.e. conn_established)
+				if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
+					if (msg.at(2) == "GO") {
+						NetworkIntf go_nic(msg.at(1));
+						Connection new_conn(go_nic);
+						connections.push_front(new_conn);
+					}
+				}
+
+				//EVENT >> ap_sta_connected (i.e. latest connection participant)
+				// TODO check if AP_STA_CONNECTED may be read without any error!!
+				if (msg.at(0) == AP_STA_CONNECTED) {
+					list<Peer>::iterator it = peers.begin();
+					for (; it != peers.end(); ++it) {
+						if (it->getMacAddr() == msg.at(1)) {
+							connections.front().setPeer(*it);
+							break;
+						}
+					}
+				}
+
+				//EVENT >> ap_sta_disconnected
+				/*
+				 * Maybe the GO had removed the p2p_group or, after a longer timeout,
+				 * 	a connected non-GO station had removed its p2p_group_connection,
+				 * 	i.e. the corresponding virtual interface.
+				 *
+				 */
+				// TODO check if AP_STA_DISCONNECTED may be read without any error!!
+				if (msg.at(0) == AP_STA_DISCONNECTED) {
+					string mac_disconn = msg.at(2).substr(13);
+					list<Connection>::iterator it = connections.begin();
+					for (; it != connections.end(); ++it) {
+						if (it->getPeer().getMacAddr() == mac_disconn)
+							disconnect(*it);
+						else
+							continue;
+					}
+				}
+
+				//EVENT >> p2p_group_negotiation_request (i.e. conn_request)
+				//Connects immediately after a connection request was received at wpa_s.
+				if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
+					bool direct_connect = true;
+					if (direct_connect) {
 						bool in_list = false;
-
-						for (; jt != peers.end(); ++jt) {
-							cout << jt->getName() << " :: " << jt->getMacAddr() << endl;
-							if (jt->getName() == p.getName()) {
-								if (jt->getMacAddr() == p.getMacAddr())
-									in_list = true;
-							}
-						}
-
-						if (!in_list) {
-							peers.push_back(p);
-							cout << " pushed to list" << endl;
-							ext_if.peerFound(p);
-						}
-
-						false;
-					}
-
-					//EVENT >> p2p_group_started (i.e. conn_established)
-					if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
-						if (msg.at(2) == "GO") {
-							NetworkIntf go_nic(msg.at(1));
-							Connection new_conn(go_nic);
-							connections.push_front(new_conn);
-						}
-					}
-
-					//EVENT >> ap_sta_connected (i.e. latest connection participant)
-					// TODO check if AP_STA_CONNECTED may be read without any error!!
-					if (msg.at(0) == AP_STA_CONNECTED) {
 						list<Peer>::iterator it = peers.begin();
 						for (; it != peers.end(); ++it) {
 							if (it->getMacAddr() == msg.at(1)) {
-								connections.front().setPeer(*it);
+								in_list = true;
 								break;
-							}
-						}
-					}
-
-					//EVENT >> ap_sta_disconnected
-					/*
-					 * Maybe the GO had removed the p2p_group or, after a longer timeout,
-					 * 	a connected non-GO station had removed its p2p_group_connection,
-					 * 	i.e. the corresponding virtual interface.
-					 *
-					 */
-					// TODO check if AP_STA_DISCONNECTED may be read without any error!!
-					if (msg.at(0) == AP_STA_DISCONNECTED) {
-						string mac_disconn = msg.at(2).substr(13);
-						list<Connection>::iterator it = connections.begin();
-						for (; it != connections.end(); ++it) {
-							if (it->getPeer().getMacAddr() == mac_disconn)
-								disconnect(*it);
-							else
-								continue;
-						}
-					}
-
-					//EVENT >> p2p_group_negotiation_request (i.e. conn_request)
-					//Connects immediately after a connection request was received at wpa_s.
-					if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
-						bool direct_connect = true;
-						if (direct_connect) {
-							bool in_list = false;
-							list<Peer>::iterator it = peers.begin();
-							for (; it != peers.end(); ++it) {
-								if (it->getMacAddr() == msg.at(1)) {
-									in_list = true;
-									break;
-								} else {
-									continue;
-								}
-							}
-							if (!in_list) {
-								Peer peer(msg.at(1), "NoName");
-								peers.push_back(peer);
-								connectToPeer(peer);
 							} else {
-								connectToPeer(*it);
+								continue;
 							}
 						}
-					}
-
-					//EVENT >> p2p_device_lost (device or connection lost for reasons unknown)
-					if (msg.at(0) == P2P_EVENT_DEVICE_LOST) {
-						string mac_lost = msg.at(1).substr(13);
-						list<Connection>::iterator it = connections.begin();
-						for (; it != connections.end(); ++it) {
-							if (it->getPeer().getMacAddr() == mac_lost)
-								disconnect(*it);
-							else
-								continue;
+						if (!in_list) {
+							Peer peer(msg.at(1), "NoName");
+							peers.push_back(peer);
+							connectToPeer(peer);
+						} else {
+							connectToPeer(*it);
 						}
 					}
+				}
 
-					//EVENT >> group_formation_failure
-					/*if (msg.at(0) == P2P_EVENT_GO_NEG_FAILURE
+				//EVENT >> p2p_device_lost (device or connection lost for reasons unknown)
+				if (msg.at(0) == P2P_EVENT_DEVICE_LOST) {
+					string mac_lost = msg.at(1).substr(13);
+					list<Connection>::iterator it = connections.begin();
+					for (; it != connections.end(); ++it) {
+						if (it->getPeer().getMacAddr() == mac_lost)
+							disconnect(*it);
+						else
+							continue;
+					}
+				}
+
+				//EVENT >> group_formation_failure
+				/*if (msg.at(0) == P2P_EVENT_GO_NEG_FAILURE
 							|| msg.at(0) == P2P_EVENT_GROUP_FORMATION_FAILURE) {
 						list<Peer>::iterator it = peers->begin();
 						for (; it != peers->end(); ++it) {
@@ -338,67 +323,64 @@ namespace wifip2p {
 
 					}*/
 
-					//EVENT >> retrieved_service_request
-					if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
-						;
-					}
+				//EVENT >> retrieved_service_request
+				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
+					;
+				}
 
-					//EVENT >> retrieved_service_response
-					/*
-					 * The return of not only the upnp sd_resp header with empty data
-					 * 	implies the specific peer to host at least on requested service.
-					 * 	An Iterator checks if that peer is already contained in the
-					 * 	peers list. If not, it pushes that peer to the list; else, remain
-					 * 	the list unchanged and call back ext_if.peerFound(Peer).
-					 * If only the upnp sd_resp header with empty data is returned, which
-					 * 	implies the service not being hosted at that peer, the specific
-					 * 	peer will be deleted from the peers list.
-					 *
-					 */
-					if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
-						if (msg.at(3) != "0300020101") {
-							list<Peer>::iterator it = peers.begin();
-							bool in_list = false;
-							for (; it != peers.end(); ++it) {
-								if (it->getMacAddr() == msg.at(1)) {
-									ext_if.peerFound(*it);
-									in_list = true;
-									break;
-								} else {
-									continue;
-								}
+				//EVENT >> retrieved_service_response
+				/*
+				 * The return of not only the upnp sd_resp header with empty data
+				 * 	implies the specific peer to host at least on requested service.
+				 * 	An Iterator checks if that peer is already contained in the
+				 * 	peers list. If not, it pushes that peer to the list; else, remain
+				 * 	the list unchanged and call back ext_if.peerFound(Peer).
+				 * If only the upnp sd_resp header with empty data is returned, which
+				 * 	implies the service not being hosted at that peer, the specific
+				 * 	peer will be deleted from the peers list.
+				 *
+				 */
+				if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
+					if (msg.at(3) != "0300020101") {
+						list<Peer>::iterator it = peers.begin();
+						bool in_list = false;
+						for (; it != peers.end(); ++it) {
+							if (it->getMacAddr() == msg.at(1)) {
+								ext_if.peerFound(*it);
+								in_list = true;
+								break;
+							} else {
+								continue;
 							}
-							if (in_list == false) {
-								// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
-								/*
-								 * This case is rather unrealistic, as it is likely be
-								 * 	assumed that any peer is discovered with it's name
-								 * 	stored beside the MAC address in a proper Peer object
-								 * 	right before any sd_resp will be received.
-								 * 	Following this, the very most of the peers, as being
-								 * 	candidates for potentially connections, will have been
-								 * 	discovered already and are stored locally, with proper
-								 * 	MAC and peer names.
-								 * Implementing the above method would solve this issue
-								 * 	completely.
-								 *
-								 */
-								Peer p(msg.at(1), "NoName");
-								peers.push_back(p);
-								ext_if.peerFound(p);
-							}
-						} else {
-							list<Peer>::iterator it = peers.begin();
-							for (; it != peers.end(); ++it) {
-								if (it->getMacAddr() == msg.at(1))
-									peers.erase(it);
-							}
+						}
+						if (in_list == false) {
+							// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
+							/*
+							 * This case is rather unrealistic, as it is likely be
+							 * 	assumed that any peer is discovered with it's name
+							 * 	stored beside the MAC address in a proper Peer object
+							 * 	right before any sd_resp will be received.
+							 * 	Following this, the very most of the peers, as being
+							 * 	candidates for potentially connections, will have been
+							 * 	discovered already and are stored locally, with proper
+							 * 	MAC and peer names.
+							 * Implementing the above method would solve this issue
+							 * 	completely.
+							 *
+							 */
+							Peer p(msg.at(1), "NoName");
+							peers.push_back(p);
+							ext_if.peerFound(p);
+						}
+					} else {
+						list<Peer>::iterator it = peers.begin();
+						for (; it != peers.end(); ++it) {
+							if (it->getMacAddr() == msg.at(1))
+								peers.erase(it);
 						}
 					}
 				}
 			}
-
-
 		} else {
 			// TODO is an exception really needed here?
 			throw SupplicantHandleException("SupplicantHandle needs to be in monitor mode for ::listen().");
