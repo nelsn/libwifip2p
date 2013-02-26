@@ -22,7 +22,6 @@ class WifiP2PInterface {
 public:
 	virtual ~WifiP2PInterface() { };
 
-	virtual void peerFound() = 0;
 	virtual void peerFound(Peer peer) = 0;
 	virtual void connectionEstablished(Connection conn) = 0;
 	virtual void connectionLost(Connection conn) = 0;

@@ -204,36 +204,24 @@ namespace wifip2p {
 
 		if (this->monitor_mode) {
 
-			cout << "BLABLABLABLA" << endl;
-
 			int x = wpa_ctrl_pending((struct wpa_ctrl*)_handle);
-			cout << "wpa_ctrl_pending results in: " << x << endl;
 
-			char buf[256];
-			size_t len;
+			if (x!=0)
+				cout << "Pending? " << x << endl;
 
-			int k = 0;
-
+			//while (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
 			while (true) {
+
+				char buf[256];
+				size_t len;
 
 				if (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
 
-					len = sizeof(buf);
-
 					wpa_ctrl_recv((struct wpa_ctrl*)_handle, buf, &len);
-
-					string buffer(buf, len);
-					string bufcmd(buf, 23);
-					//cout << buffer << "cut buffer --23 > " << bufcmd << endl;
-
-					if (!(bufcmd == "<3>CTRL-EVENT-BSS-ADDED"
-							&& bufcmd == "<3>CTRL-EVENT-BSS-REMOVED")) {
-						cout << "Inner while-loop #" << k << endl;
-
-						cout << buffer << endl;
-					}
-
 					vector<string> msg = msgDecompose(buf);
+
+					//for testing purposes: prints out every cmd's event-message
+					//cout << msg.at(0) << endl;
 
 					//EVENT >> p2p_device_found
 					if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
@@ -260,7 +248,7 @@ namespace wifip2p {
 							ext_if.peerFound(p);
 						}
 
-						++k;
+						false;
 					}
 
 					//EVENT >> p2p_group_started (i.e. conn_established)
@@ -407,16 +395,9 @@ namespace wifip2p {
 							}
 						}
 					}
-
-
-					if (k == 1)
-						break;
-
 				}
 			}
 
-
-			cout << "After while" << endl;
 
 		} else {
 			// TODO is an exception really needed here?

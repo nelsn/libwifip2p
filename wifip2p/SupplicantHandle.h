@@ -66,6 +66,8 @@ public:
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
+	vector<string> msgDecompose(char *buf);
+
 private:
 	bool monitor_mode;
 	void *_handle;
@@ -80,7 +82,6 @@ private:
 	//bool p2pCommand(string cmd) throw (SupplicantHandleException);
 	bool p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException);
 
-	vector<string> msgDecompose(char* buf);
 
 	// TODO IMPLEMENTATIN (Priority: low)
 	string getPeerNameFromSDResp(string tlv);

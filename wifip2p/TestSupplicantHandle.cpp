@@ -56,6 +56,24 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 
 		this->listen(peers, connections, ext_if_dummy);
 
+
+		/** Testing SupplicantHandle::msgDecompose(*char)
+		 * 	Method needs to be in SupplicantHandle's public section,
+		 * 		whether it's supposed to be a private method.
+		 */
+		/*
+		char pseudo_buf[256] = "<3>P2P-DEVICE-FOUND 30:39:26:00:e9:9d p2p_dev_addr=30:39:26:00:e9:9d pri_dev_type=10-0050F204-5 name='Android_9cdb' config_methods=0x188 dev_capab=0x21 group_capab=0x0";
+
+		vector<string> msgvec;
+		msgvec = msgDecompose(pseudo_buf);
+
+		vector<string>::iterator it = msgvec.begin();
+		for (; it != msgvec.end(); ++it) {
+			cout << *it << endl;
+		}
+		// Testing SupplicantHandle::msgDecompose(*char) */
+
+
 		this->findPeersStop();
 
 

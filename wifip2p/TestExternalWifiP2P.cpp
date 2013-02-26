@@ -17,13 +17,9 @@ public:
 		;
 	}
 
-	void peerFound() {
-		cout << "Yeah, a Peer is found!!" << endl;
-	}
-
 	void peerFound(Peer peer) {
-		//cout << "Yeah, a Peer " << peer.getName() << " is found!!" << endl;
-		cout << "Yeah, a Peer is found!!" << endl;
+		cout << "Yeah, a Peer " << peer.getName() << " is found!!" << endl;
+		//cout << "Yeah, a Peer is found!!" << endl;
 	}
 
 
