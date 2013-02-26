@@ -5,7 +5,7 @@ includedir=@includedir@
 
 Name: @GENERIC_LIBRARY_NAME@
 Description: Wi-Fi P2P Library
-Requires: wifip2p @REQUIRES_LIBS@
+Requires: 
 Version: @VERSION@
 Libs: -L${libdir} -l@GENERIC_LIBRARY_NAME@
 Cflags: -I${includedir}/@GENERIC_LIBRARY_NAME@-@GENERIC_API_VERSION@
