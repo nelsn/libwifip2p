@@ -47,7 +47,7 @@ void CoreEngine::run() {
 				if (!timer.isRunning())
 					timer.setTimer(2, 0);
 
-				wpamon.listen(peers, connections, ext_if);
+				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
 
 			} while(!timer.timeout());
 

@@ -36,15 +36,15 @@ private:
 class Peer {
 
 public:
-	Peer();
-	Peer(string mac, string name) throw (PeerException);
+	Peer(string mac);
+	Peer(string mac, string name);
 	virtual ~Peer();
 
 	string getMacAddr();
 	string getName();
 
 	bool equals(Peer peer);
-	bool inList(list<Peer> &peers);
+	bool inList(list<Peer> peers, Peer *peer);
 
 private:
 	string mac_addr;

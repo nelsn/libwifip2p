@@ -11,15 +11,14 @@ using namespace std;
 
 namespace wifip2p {
 
-Peer::Peer() {
-	// TODO
-	;
+Peer::Peer(string mac)
+	: mac_addr(mac) {
+
 }
 
-Peer::Peer(string mac, string name) throw (PeerException) {
-
-	this->mac_addr = mac;
-	this->name = name;
+Peer::Peer(string mac, string name)
+	: mac_addr(mac),
+	  name(name) {
 
 	/*
 	 * Yet taken out, because this address validating is not
@@ -52,7 +51,7 @@ Peer::~Peer() {
  *
  */
 bool Peer::equals(Peer peer) {
-	if (this->mac_addr == peer.mac_addr())
+	if (this->mac_addr == peer.getMacAddr())
 		return true;
 	else
 		return false;
@@ -64,14 +63,29 @@ bool Peer::equals(Peer peer) {
  *
  * @peers: list<Peer> to being checked for containing the calling
  * 			peer.
- * Return: true, if the peer is contained within peers; else
- * 			otherwise.
+ * @*peer: A Pointer to an object of type Peer. If the peer is
+ * 			found within the list and fully discovered, i.e. discovered
+ * 			with name attribute derived within SD_REQ-RESP processing,
+ * 			this peer will be pointed at by *peer.
+ * Return: true, if the peer is contained within peers. *peer = NULL,
+ * 			if the peer is not fully discovered contained, otherwise
+ * 			*peer = actually checked iterator-peer.
+ * 			In case of not being contained, returns false.
  */
-bool Peer::inList(list<Peer> &peers) {
+bool Peer::inList(list<Peer> peers, Peer *peer) {
 	list<Peer>::iterator it = peers.begin();
 	for (; it != peers.end(); ++it) {
-		if (this->equals(*it))
-			return true;
+		cout << "equality" << endl;
+		if (this->equals(*it)) {
+			if (it->getName() != "") {
+				if (peer != NULL)
+					peer = it;
+				return true;
+			} else {
+				peer = NULL;
+				return true;
+			}
+		}
 	}
 	return false;
 }

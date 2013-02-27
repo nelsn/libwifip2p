@@ -30,7 +30,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		this->init("DevName", services);
 
 		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
-		Peer p2("30:39:26:00:e9:9d", "Android_9cd");
+		Peer p2("30:39:26:00:e9:9e", "Android_9cd");
 
 		list<Peer> peers;
 		peers.push_back(p1);

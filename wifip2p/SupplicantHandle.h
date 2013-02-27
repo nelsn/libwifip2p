@@ -55,12 +55,13 @@ public:
 	void findPeers() throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
 	void listen(list<Peer> &peers,
-			list<Connection> &connections, WifiP2PInterface &ext_if) throw (SupplicantHandleException);
+			list<Connection> &connections,
+			list<string> &services,
+			list<string> &sdreq_id,
+			WifiP2PInterface &ext_if) throw (SupplicantHandleException);
 
 	void requestService(string service, list<string> *sdreq_id) throw (SupplicantHandleException);
-	// TODO IMPLEMENTATION
-	void requestService(Peer peer, string service) throw (SupplicantHandleException);
-	// TODO IMPLEMENTATION
+	void requestService(Peer peer, string service, list<string> *sdreq_id) throw (SupplicantHandleException);
 	void requestServiceCancel(string sdreq_id) throw (SupplicantHandleException);
 
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);

@@ -22,6 +22,7 @@ namespace wifip2p {
 	const string SERVDISC_TYPE = "upnp";
 	const string SERVDISC_VERS = "10";
 	const string BROADCAST = "00:00:00:00:00:00";
+	const string REQ_ALL_UPNP_SERVICES = "02000201";
 
 	SupplicantHandle::SupplicantHandle(bool monitor)
 		: _handle(NULL),
@@ -200,6 +201,7 @@ namespace wifip2p {
 	 *  			variable referring to the respective WifiP2PInterface implementation.
 	 */
 	void SupplicantHandle::listen(list<Peer> &peers, list<Connection> &connections,
+			list<string> &services, list<string> &sdreq_id,
 			WifiP2PInterface &ext_if) throw (SupplicantHandleException) {
 
 		if (this->monitor_mode) {
@@ -223,14 +225,33 @@ namespace wifip2p {
 				//EVENT >> p2p_device_found
 				if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
 
-					string mac(msg.at(1));
-					string name = msg.at(4).substr(6, msg.at(4).length() - 7);
+					/**With msg.at(1) one may get the MAC immediately, but this
+					 *  place especially not stores the hardware interface's MAC
+					 *  but the one of a may or may not have been created virtual
+					 *  interface.
+					 * So here we cope with msg.at(2).substr(13) resulting in
+					 *  msg.at(2): 			  "p2p_dev_addr=<MAC-ADDR>"
+					 *  msg.at(2).substr(13): "<MAC-ADDR>"
+					 */
+					string mac(msg.at(2).substr(13));
+					//TODO hexstring->string Method!!!
+					//HAT KEINEN NAMEN!! DA DER device_name="..." NICHT AUSGEWERTET
+					// WERDEN SOLL!
+					//string name = msg.at(4).substr(6, msg.at(4).length() - 7);
 
-					Peer p(mac, name);
+					Peer p(mac);
+					Peer temp_p(mac);
 
-					if (!p.inList(peers)) {
+					if (!p.inList(peers, &temp_p)) {
 						peers.push_back(p);
 						cout << " pushed to list" << endl;
+					} else {
+						if (temp_p != NULL) {
+							//p is in list peers contained and fully discovered
+							ext_if.peerFound(p);
+						} else {
+							requestService()
+						}
 					}
 
 					ext_if.peerFound(p);
@@ -245,17 +266,18 @@ namespace wifip2p {
 					}
 				}
 
+				//TODO (SENSELESS NOW!!! CONSIDER WHAT THIS IMPLIES AND NEEDS TO BE DONE)
 				//EVENT >> ap_sta_connected (i.e. latest connection participant)
 				// TODO check if AP_STA_CONNECTED may be read without any error!!
+				/*
 				if (msg.at(0) == AP_STA_CONNECTED) {
-					list<Peer>::iterator it = peers.begin();
-					for (; it != peers.end(); ++it) {
-						if (it->getMacAddr() == msg.at(1)) {
-							connections.front().setPeer(*it);
-							break;
-						}
+					Peer connected_peer(msg.at(1));
+					if (connected_peer.inList(peers, NULL)) {
+						connections.front().setPeer(connected_peer);
+						//ext_if.connectionEstablished(...);
 					}
 				}
+				*/
 
 				//EVENT >> ap_sta_disconnected
 				/*
@@ -267,6 +289,7 @@ namespace wifip2p {
 				// TODO check if AP_STA_DISCONNECTED may be read without any error!!
 				if (msg.at(0) == AP_STA_DISCONNECTED) {
 					string mac_disconn = msg.at(2).substr(13);
+					Peer disconn_peer(mac_disconn);
 					list<Connection>::iterator it = connections.begin();
 					for (; it != connections.end(); ++it) {
 						if (it->getPeer().getMacAddr() == mac_disconn)
@@ -325,7 +348,35 @@ namespace wifip2p {
 
 				//EVENT >> retrieved_service_request
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
-					;
+					/*
+					 * 1) Nachgucken, ob peer fully_discovered.
+					 * 		JA: Hat Service an dem this interessiert ist zu bieten
+					 * 			=> kann ext_if mit peerFound(peer) anrufen
+					 * 		NEIN:
+					 * 			Unbekannt ob interessante services.
+					 * 			=> (i) 	sdreq an peer starten.
+					 * 					 über alle eigenen Services loopen.
+					 * 			   (ii)	wenn daraufhin irgendwann (= CoreEngine.state egal)
+					 * 			   		 irgendeine positive antwort auf einen der
+					 * 			   		 sdreq's erfolgt, wird gemäß EVENT (siehe
+					 * 			   		 P2P_EVENT_SERV_DISC_RESP) der peer fully_discovered
+					 * 			   		 in "peers" gesetzt und extif angerufen.
+					 * 			   		ansonsten kann der peer aus der liste
+					 * 			   		 "peers" gelöscht werden
+					 *
+					 */
+					Peer p(msg.at(2));
+					Peer temp_p(msg.at(2));
+					if (p.inList(peers, &temp_p)) {
+						if (temp_p != NULL) {
+							ext_if.peerFound(p);
+						} else {
+							list<string>::iterator it = services.begin();
+							for (; it != services.end(); ++it) {
+								requestService(p, *it, &sdreq_id);
+							}
+						}
+					}
 				}
 
 				//EVENT >> retrieved_service_response
@@ -401,7 +452,8 @@ namespace wifip2p {
 	 * 			   -- though no more considered (and replied) by peers, which were
 	 * 			   able to handle it properly; others would be penetrated.
 	 */
-	void SupplicantHandle::requestService(string service, list<string> *sdreq_id) throw (SupplicantHandleException) {
+	void SupplicantHandle::requestService(string service, list<string> *sdreq_id)
+			throw (SupplicantHandleException) {
 		try {
 			if (sdreq_id != NULL) {
 				string returned_id;
@@ -423,14 +475,59 @@ namespace wifip2p {
 		}
 	}
 
-	// TODO
-	void SupplicantHandle::requestService(Peer peer, string service) throw (SupplicantHandleException) {
-		;
+	/**
+	 * Requests a upnp service, at a specific destination peer.
+	 * This method is especially meant to request the destination peer's name,
+	 *  as registered per service.
+	 *  Furthermore, one will get a service response whether the service is
+	 *  registered at that peer's wpa_s or not.
+	 * The whole procedure turns a peer (only MAC known) into a 'fully discovered'
+	 * 	peer, with MAC and name known, in the case it holds the requested service.
+	 * 	The name must be derived from the destination peer's automatically
+	 * 	generated sd_response.
+	 *
+	 * @peer:	   The peer destined for the service request.
+	 * @service:   The service in request.
+	 * @*sdreq_id: Pointer at a list, where the per request corresponding
+	 * 				will be pushed at sdreq_id. Required to cancel any requested
+	 * 				service later.
+	 *
+	 */
+	void SupplicantHandle::requestService(Peer peer, string service, list<string> *sdreq_id)
+			throw (SupplicantHandleException) {
+		try {
+			if (sdreq_id != NULL) {
+				string returned_id;
+				this->p2pCommand("P2P_SERV_DISC_REQ "
+						+ peer.mac_addr
+						+ SERVDISC_TYPE
+						+ SERVDISC_VERS
+						+ service, &returned_id);
+				sdreq_id->push_back(returned_id);
+			} else {
+				this->p2pCommand("P2P_SERV_DISC_REQ "
+						+ peer.getMacAddr()
+						+ SERVDISC_TYPE
+						+ SERVDISC_VERS
+						+ service, NULL);
+			}
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
 	}
 
-	// TODO
+	/**
+	 * Cancels a pending service request, according to it's, id at wpa_s.
+	 *
+	 * @sdreq_id: The corresponding ID required to cancel a pending service request.
+	 *
+	 */
 	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
-		;
+		try {
+			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, NULL);
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
 	}
 
 
