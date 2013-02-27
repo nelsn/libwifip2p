@@ -128,6 +128,8 @@ void CoreEngine::connect(wifip2p::Peer peer) {
 
 	wpasup.connectToPeer(peer);
 
+	actual_state = ST_CONN;
+
 	while (true) {
 
 		//wpamon.listen();

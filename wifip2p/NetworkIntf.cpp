@@ -11,15 +11,16 @@ using namespace std;
 
 namespace wifip2p {
 
-NetworkIntf::NetworkIntf(string name) {
-	this->name = name;
+NetworkIntf::NetworkIntf(string name)
+	: name(name) {
+
 }
 
 NetworkIntf::~NetworkIntf() {
 	// TODO Auto-generated destructor stub
 }
 
-string NetworkIntf::getName() {
+string NetworkIntf::getName() const {
 	return this->name;
 }
 

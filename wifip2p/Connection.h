@@ -19,9 +19,9 @@ public:
 	Connection(Peer peer, NetworkIntf nic);
 	virtual ~Connection();
 
-	Peer getPeer();
+	Peer getPeer() const;
 	void setPeer(Peer peer);
-	NetworkIntf getNetworkIntf();
+	NetworkIntf getNetworkIntf() const;
 
 private:
 	Peer 		peer;

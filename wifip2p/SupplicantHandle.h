@@ -60,19 +60,18 @@ public:
 			list<string> &sdreq_id,
 			WifiP2PInterface &ext_if) throw (SupplicantHandleException);
 
-	void requestService(string service, list<string> *sdreq_id) throw (SupplicantHandleException);
-	void requestService(Peer peer, string service, list<string> *sdreq_id) throw (SupplicantHandleException);
+	void requestService(string service, list<string> *sdreq_id)
+			throw (SupplicantHandleException);
+	void requestService(Peer peer, string service, list<string> *sdreq_id)
+			throw (SupplicantHandleException);
 	void requestServiceCancel(string sdreq_id) throw (SupplicantHandleException);
 
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
-	vector<string> msgDecompose(char *buf);
-
 private:
 	bool monitor_mode;
 	void *_handle;
-	int fd_listen;
 
 	bool setMonitorMode() throw (SupplicantHandleException);
 
@@ -80,9 +79,9 @@ private:
 	bool flushServices() throw (SupplicantHandleException);
 	bool addService(string name, string service) throw (SupplicantHandleException);
 
-	//bool p2pCommand(string cmd) throw (SupplicantHandleException);
 	bool p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException);
 
+	vector<string> msgDecompose(char *buf);
 
 	// TODO IMPLEMENTATIN (Priority: low)
 	string getPeerNameFromSDResp(string tlv);

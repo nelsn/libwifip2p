@@ -10,6 +10,7 @@
 
 //#include <stdlib.h>
 //#include <stdint.h>
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>	//recvReply FD operations accordingly to http://www.kernel.org/doc/man-pages/online/pages/man2/read.2.html
@@ -222,45 +223,49 @@ namespace wifip2p {
 				//for testing purposes: prints out every cmd's event-message
 				cout << msg.at(0) << endl;
 
-				//EVENT >> p2p_device_found
+				/* EVENT >> [DEVICE_FOUND]
+				 *
+				 */
 				if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
 
-					/**With msg.at(1) one may get the MAC immediately, but this
-					 *  place especially not stores the hardware interface's MAC
+					/* With msg.at(1) one may get the MAC immediately, but this
+					 *  place especially not stores the hardware interface's MAC,
 					 *  but the one of a may or may not have been created virtual
 					 *  interface.
-					 * So here we cope with msg.at(2).substr(13) resulting in
+					 * So here we cope with msg.at(2).substr(13), resulting in
 					 *  msg.at(2): 			  "p2p_dev_addr=<MAC-ADDR>"
 					 *  msg.at(2).substr(13): "<MAC-ADDR>"
 					 */
 					string mac(msg.at(2).substr(13));
-					//TODO hexstring->string Method!!!
-					//HAT KEINEN NAMEN!! DA DER device_name="..." NICHT AUSGEWERTET
-					// WERDEN SOLL!
-					//string name = msg.at(4).substr(6, msg.at(4).length() - 7);
-
 					Peer p(mac);
-					Peer *temp_p;
 
-					if (!p.inList(peers, temp_p)) {
-						peers.push_back(p);
-						cout << " pushed to list" << endl;
+					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
+
+					if (peer_it == peers.end()) {
+					    peers.push_back(p);
 					} else {
-						if (temp_p != NULL) {
-							//p is in list peers contained and fully discovered
-							ext_if.peerFound(p);
-						} else {
-							list<string>::iterator it = services.begin();
-							for (; it != services.end(); ++it)
-								requestService(p, *it, &sdreq_id);
-
-						}
+						//Check: p in list? => peer_it ~ p in list
+					    if (peer_it->getName() != "") {
+					        /* peer_it has name other than ""
+					         * 	=> peer_it is already fully_discovered
+					         * 	=> call back ext_if with *peer_it
+					         * 		dereferenced
+					         */
+					        ext_if.peerFound(*peer_it);
+					    } else {
+					    	/* peer_it is not fully_discovered yet
+					    	 * 	=> start service_discovery@peer_it
+					    	 */
+					        list<string>::iterator it = services.begin();
+					        for (; it != services.end(); ++it)
+					            requestService(*peer_it, *it, &sdreq_id);
+					    }
 					}
-
-					ext_if.peerFound(p);
 				}
 
-				//EVENT >> p2p_group_started (i.e. conn_established)
+				/* EVENT >> [GROUP_STARTED]
+				 * 			 That is, a connection is established.
+				 */
 				if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
 					if (msg.at(2) == "GO") {
 						NetworkIntf go_nic(msg.at(1));
@@ -349,7 +354,9 @@ namespace wifip2p {
 
 					}*/
 
-				//EVENT >> retrieved_service_request
+				/* EVENT >> [RECEIVED_SERVICE_ REQUEST]
+				 *
+				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
 					/*
 					 * 1) Nachgucken, ob peer fully_discovered.
@@ -369,16 +376,20 @@ namespace wifip2p {
 					 *
 					 */
 					Peer p(msg.at(2));
-					Peer *temp_p;
-					if (p.inList(peers, temp_p)) {
-						if (temp_p != NULL) {
-							ext_if.peerFound(p);
-						} else {
+
+					list<Peer>::const_iterator peer_it = find(peers.begin(),
+																peers.end(), p);
+
+					if (peer_it != peers.end()) { //true if p in peers
+						if (peer_it->getName() != "") //true if p~peer_it fully_discovered
+							ext_if.peerFound(*peer_it);
+						else { //p~peer_it not fully_discovered => DISCOVER!
 							list<string>::iterator it = services.begin();
-							for (; it != services.end(); ++it) {
-								requestService(p, *it, &sdreq_id);
-							}
+							for (; it != services.end(); ++it)
+								requestService(*peer_it, *it, &sdreq_id);
 						}
+					} else {
+						peers.push_back(*peer_it);
 					}
 				}
 
@@ -386,9 +397,9 @@ namespace wifip2p {
 				/*
 				 * The return of not only the upnp sd_resp header with empty data
 				 * 	implies the specific peer to host at least on requested service.
-				 * 	An Iterator checks if that peer is already contained in the
-				 * 	peers list. If not, it pushes that peer to the list; else, remain
-				 * 	the list unchanged and call back ext_if.peerFound(Peer).
+				 * 	An Iterator checks, if that peer is already contained in the
+				 * 	peers list. If not, that peer is pushed to the list; else, the list
+				 * 	remains unchanged and ext_if.peerFound(Peer) gets called.
 				 * If only the upnp sd_resp header with empty data is returned, which
 				 * 	implies the service not being hosted at that peer, the specific
 				 * 	peer will be deleted from the peers list.
@@ -396,18 +407,25 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
 					if (msg.at(3) != "0300020101") {
-						list<Peer>::iterator it = peers.begin();
-						bool in_list = false;
-						for (; it != peers.end(); ++it) {
-							if (it->getMacAddr() == msg.at(1)) {
-								ext_if.peerFound(*it);
-								in_list = true;
-								break;
+						Peer p(msg.at(1));
+						list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
+
+						if (peer_it != peers.end()) {
+							if (peer_it->getName() != "") {
+								ext_if.peerFound(*peer_it);
 							} else {
-								continue;
+								list<Peer>::iterator it = peers.begin();
+								for (; it != peers.end(); ++it) {
+									if (*it == p)
+										peers.erase(it);
+								}
+								p.setName(getPeerNameFromSDResp(msg.at(3)));
+								peers.push_back(p);
 							}
+						} else {
+							p.setName(getPeerNameFromSDResp(msg.at(3)));
+							peers.push_back(p);
 						}
-						if (in_list == false) {
 							// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
 							/*
 							 * This case is rather unrealistic, as it is likely be
@@ -422,10 +440,6 @@ namespace wifip2p {
 							 * 	completely.
 							 *
 							 */
-							Peer p(msg.at(1), "NoName");
-							peers.push_back(p);
-							ext_if.peerFound(p);
-						}
 					} else {
 						list<Peer>::iterator it = peers.begin();
 						for (; it != peers.end(); ++it) {
@@ -700,20 +714,10 @@ namespace wifip2p {
 	 *
 	 */
 	bool SupplicantHandle::setMonitorMode() throw (SupplicantHandleException) {
-		if (wpa_ctrl_attach((struct wpa_ctrl*) (_handle)) == 0) {
-
-			//Get monitoring socket's FD
-			fd_listen = wpa_ctrl_get_fd((struct wpa_ctrl*)_handle);
-
-			cout << "fd_listen state: " << fd_listen << endl;
-
-			if (fd_listen < 0) {
-				throw SupplicantHandleException("FileDescr. problem occured.");
-			}
+		if (wpa_ctrl_attach((struct wpa_ctrl*) (_handle)) == 0)
 			return true;
-		} else {
+		else
 			return false;
-		}
 	}
 
 } /* namespace wifip2p */

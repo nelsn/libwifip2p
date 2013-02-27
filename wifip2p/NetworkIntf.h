@@ -19,7 +19,7 @@ public:
 	NetworkIntf(string name);
 	virtual ~NetworkIntf();
 
-	string getName();
+	string getName() const;
 
 private:
 	string name;

@@ -8,12 +8,12 @@
 #include "wifip2p/Connection.h"
 
 namespace wifip2p {
-/*
+
 Connection::Connection(NetworkIntf nic)
 	: nic(nic) {
 
 }
-*/
+
 Connection::Connection(Peer peer, NetworkIntf nic)
 	: peer(peer),
 	  nic(nic) {
@@ -24,7 +24,7 @@ Connection::~Connection() {
 	// TODO Auto-generated destructor stub
 }
 
-Peer Connection::getPeer() {
+Peer Connection::getPeer() const {
 	return this->peer;
 }
 
@@ -32,7 +32,7 @@ void Connection::setPeer(Peer peer) {
 	this->peer = peer;
 }
 
-NetworkIntf Connection::getNetworkIntf() {
+NetworkIntf Connection::getNetworkIntf() const {
 	return this->nic;
 }
 

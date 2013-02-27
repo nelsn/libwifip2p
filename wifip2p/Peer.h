@@ -36,15 +36,16 @@ private:
 class Peer {
 
 public:
+	Peer();
 	Peer(string mac);
 	Peer(string mac, string name);
 	virtual ~Peer();
 
-	string getMacAddr();
-	string getName();
+	string getMacAddr() const;
+	string getName() const;
+	void setName(string name);
 
-	bool equals(Peer peer);
-	bool inList(const list<Peer> &peers, Peer *peer);
+	bool operator==(const Peer &peer) const;
 
 private:
 	string mac_addr;

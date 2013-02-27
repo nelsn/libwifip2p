@@ -29,6 +29,8 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		services.push_back("Serv2");
 		this->init("DevName", services);
 
+		list<string> sdreq_id;
+
 		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
 		Peer p2("30:39:26:00:e9:9e", "Android_9cd");
 
@@ -55,8 +57,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		//this->disconnect(conn);
 
 		for (int i=1000000; i!=0; i--)
-			this->listen(peers, connections, ext_if_dummy);
-
+			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
 
 		/** Testing SupplicantHandle::msgDecompose(*char)
 		 * 	Method needs to be in SupplicantHandle's public section,
