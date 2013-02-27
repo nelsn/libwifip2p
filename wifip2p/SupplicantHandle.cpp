@@ -266,6 +266,10 @@ namespace wifip2p {
 				/* EVENT >> [GROUP_STARTED]
 				 * 			 That is, a connection is established.
 				 */
+				//TODO if msg.at(2) == "GO". Wait for AP-STA-CONNECTED event
+					// if msg.at(2) == "client" search for
+					//	Peer p(msg.at(6).substr(12)) within peers
+					//	grab it, push a Connection(msg.at(1)~IF, p)
 				if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
 					if (msg.at(2) == "GO") {
 						NetworkIntf go_nic(msg.at(1));
@@ -274,7 +278,9 @@ namespace wifip2p {
 					}
 				}
 
-				//TODO (SENSELESS NOW!!! CONSIDER WHAT THIS IMPLIES AND NEEDS TO BE DONE)
+				//TODO such a connected peer implies being the communication
+					// endpoint eventually for the latest added Connection/IF
+					// where <this_peer> is GO.
 				//EVENT >> ap_sta_connected (i.e. latest connection participant)
 				// TODO check if AP_STA_CONNECTED may be read without any error!!
 				/*
