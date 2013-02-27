@@ -16,7 +16,6 @@ namespace wifip2p {
 
 class NetworkIntf {
 public:
-	NetworkIntf();
 	NetworkIntf(string name);
 	virtual ~NetworkIntf();
 

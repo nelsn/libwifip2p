@@ -44,7 +44,7 @@ public:
 	string getName();
 
 	bool equals(Peer peer);
-	bool inList(list<Peer> peers, Peer *peer);
+	bool inList(const list<Peer> &peers, Peer *peer);
 
 private:
 	string mac_addr;

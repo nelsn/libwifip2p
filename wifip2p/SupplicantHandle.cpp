@@ -240,9 +240,9 @@ namespace wifip2p {
 					//string name = msg.at(4).substr(6, msg.at(4).length() - 7);
 
 					Peer p(mac);
-					Peer temp_p(mac);
+					Peer *temp_p;
 
-					if (!p.inList(peers, &temp_p)) {
+					if (!p.inList(peers, temp_p)) {
 						peers.push_back(p);
 						cout << " pushed to list" << endl;
 					} else {
@@ -250,7 +250,10 @@ namespace wifip2p {
 							//p is in list peers contained and fully discovered
 							ext_if.peerFound(p);
 						} else {
-							requestService()
+							list<string>::iterator it = services.begin();
+							for (; it != services.end(); ++it)
+								requestService(p, *it, &sdreq_id);
+
 						}
 					}
 
@@ -366,8 +369,8 @@ namespace wifip2p {
 					 *
 					 */
 					Peer p(msg.at(2));
-					Peer temp_p(msg.at(2));
-					if (p.inList(peers, &temp_p)) {
+					Peer *temp_p;
+					if (p.inList(peers, temp_p)) {
 						if (temp_p != NULL) {
 							ext_if.peerFound(p);
 						} else {
@@ -499,7 +502,7 @@ namespace wifip2p {
 			if (sdreq_id != NULL) {
 				string returned_id;
 				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ peer.mac_addr
+						+ peer.getMacAddr()
 						+ SERVDISC_TYPE
 						+ SERVDISC_VERS
 						+ service, &returned_id);

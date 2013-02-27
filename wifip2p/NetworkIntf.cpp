@@ -11,11 +11,6 @@ using namespace std;
 
 namespace wifip2p {
 
-NetworkIntf::NetworkIntf() {
-	// TODO Auto-generated constructor stub
-
-}
-
 NetworkIntf::NetworkIntf(string name) {
 	this->name = name;
 }

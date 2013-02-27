@@ -8,12 +8,12 @@
 #include "wifip2p/Connection.h"
 
 namespace wifip2p {
-
+/*
 Connection::Connection(NetworkIntf nic)
 	: nic(nic) {
 
 }
-
+*/
 Connection::Connection(Peer peer, NetworkIntf nic)
 	: peer(peer),
 	  nic(nic) {

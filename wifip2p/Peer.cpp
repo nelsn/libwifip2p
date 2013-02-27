@@ -72,7 +72,7 @@ bool Peer::equals(Peer peer) {
  * 			*peer = actually checked iterator-peer.
  * 			In case of not being contained, returns false.
  */
-bool Peer::inList(list<Peer> peers, Peer *peer) {
+bool Peer::inList(const list<Peer> &peers, Peer *peer) {
 	list<Peer>::iterator it = peers.begin();
 	for (; it != peers.end(); ++it) {
 		cout << "equality" << endl;
