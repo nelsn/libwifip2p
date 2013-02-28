@@ -472,7 +472,7 @@ namespace wifip2p {
 						list<Peer>::iterator it = peers.begin();
 						for (; it != peers.end(); ++it) {
 							if (it->getMacAddr() == msg.at(1)) {
-								peers.erase(it);
+								it = peers.erase(it);
 							}
 						}
 					}
