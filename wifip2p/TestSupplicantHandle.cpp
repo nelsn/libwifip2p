@@ -56,7 +56,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		//this->connectToPeer(p1);
 		//this->disconnect(conn);
 
-		for (int i=1000000; i!=0; i--)
+		for (int i=10000000; i!=0; i--)
 			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
 
 		/** Testing SupplicantHandle::msgDecompose(*char)

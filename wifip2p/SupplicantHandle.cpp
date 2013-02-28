@@ -209,8 +209,8 @@ namespace wifip2p {
 
 			int x = wpa_ctrl_pending((struct wpa_ctrl*)_handle);
 
-			if (x!=0)
-				cout << "Pending? " << x << endl;
+//			if (x!=0)
+//				cout << "Pending? " << x << endl;
 
 			char buf[256];
 			size_t len;
@@ -237,25 +237,29 @@ namespace wifip2p {
 					 *  msg.at(2).substr(13): "<MAC-ADDR>"
 					 */
 					string mac(msg.at(2).substr(13));
+					cout << "Peer found " << mac << endl;
 					Peer p(mac);
 
 					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
 
 					if (peer_it == peers.end()) {
 					    peers.push_back(p);
+					    cout << "Peer pushed back at peers, as yet not contained" << endl;
 					} else {
 						//Check: p in list? => peer_it ~ p in list
 					    if (peer_it->getName() != "") {
-					        /* peer_it has name other than ""
+					        /* If peer_it has name other than ""
 					         * 	=> peer_it is already fully_discovered
 					         * 	=> call back ext_if with *peer_it
 					         * 		dereferenced
 					         */
+					    	cout << "call back ext_if with fully discovered peer" << endl;
 					        ext_if.peerFound(*peer_it);
 					    } else {
 					    	/* peer_it is not fully_discovered yet
 					    	 * 	=> start service_discovery@peer_it
 					    	 */
+					    	cout << "peer not fully discovered. request services" << endl;
 					        list<string>::iterator it = services.begin();
 					        for (; it != services.end(); ++it)
 					            requestService(*peer_it, *it, &sdreq_id);
@@ -264,81 +268,110 @@ namespace wifip2p {
 				}
 
 				/* EVENT >> [GROUP_STARTED]
-				 * 			 That is, a connection is established.
+				 *
+				 * That is, a connection is established.
+				 * For a connection being established, the peer to be
+				 *  connected is required to be fully_discovered -
+				 *  as only those peers are handed out to ext_if eventually
+				 *  being called for a connection.
+				 *
 				 */
-				//TODO if msg.at(2) == "GO". Wait for AP-STA-CONNECTED event
-					// if msg.at(2) == "client" search for
-					//	Peer p(msg.at(6).substr(12)) within peers
-					//	grab it, push a Connection(msg.at(1)~IF, p)
 				if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
 					if (msg.at(2) == "GO") {
 						NetworkIntf go_nic(msg.at(1));
 						Connection new_conn(go_nic);
 						connections.push_front(new_conn);
-					}
-				}
+					} else {
+						/*
+						 */
+						if (msg.at(2) == "client") {
 
-				//TODO such a connected peer implies being the communication
-					// endpoint eventually for the latest added Connection/IF
-					// where <this_peer> is GO.
-				//EVENT >> ap_sta_connected (i.e. latest connection participant)
-				// TODO check if AP_STA_CONNECTED may be read without any error!!
-				/*
-				if (msg.at(0) == AP_STA_CONNECTED) {
-					Peer connected_peer(msg.at(1));
-					if (connected_peer.inList(peers, NULL)) {
-						connections.front().setPeer(connected_peer);
-						//ext_if.connectionEstablished(...);
-					}
-				}
-				*/
+							Peer temp_p(msg.at(6).substr(12));
+							NetworkIntf nic(msg.at(1));
 
-				//EVENT >> ap_sta_disconnected
-				/*
-				 * Maybe the GO had removed the p2p_group or, after a longer timeout,
-				 * 	a connected non-GO station had removed its p2p_group_connection,
-				 * 	i.e. the corresponding virtual interface.
-				 *
-				 */
-				// TODO check if AP_STA_DISCONNECTED may be read without any error!!
-				if (msg.at(0) == AP_STA_DISCONNECTED) {
-					string mac_disconn = msg.at(2).substr(13);
-					Peer disconn_peer(mac_disconn);
-					list<Connection>::iterator it = connections.begin();
-					for (; it != connections.end(); ++it) {
-						if (it->getPeer().getMacAddr() == mac_disconn)
-							disconnect(*it);
-						else
-							continue;
-					}
-				}
+							list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), temp_p);
 
-				//EVENT >> p2p_group_negotiation_request (i.e. conn_request)
-				//Connects immediately after a connection request was received at wpa_s.
-				if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
-					bool direct_connect = true;
-					if (direct_connect) {
-						bool in_list = false;
-						list<Peer>::iterator it = peers.begin();
-						for (; it != peers.end(); ++it) {
-							if (it->getMacAddr() == msg.at(1)) {
-								in_list = true;
-								break;
-							} else {
-								continue;
+							if (peer_it != peers.end()) {
+								Connection conn(*peer_it, nic);
+								connections.push_front(conn);
+								ext_if.connectionEstablished(conn);
 							}
 						}
-						if (!in_list) {
-							Peer peer(msg.at(1), "NoName");
-							peers.push_back(peer);
-							connectToPeer(peer);
-						} else {
-							connectToPeer(*it);
+					}
+				}
+
+				/* EVENT >> [AP_STA_CONNECTED]
+				 *
+				 * As the process is some kind of probabilistic, whether
+				 * 	frames cause wpa_s to generate whatever EVENT next, it
+				 * 	is assumed here, that the up front Connection within
+				 * 	connections is one with no Peer assigned yet.
+				 * 	The respective station receiving this EVENT is
+				 * 	assumed to be the GO of this Connection. The Peer
+				 * 	who lead to the generating this EVENT is likely to
+				 * 	be the one related to this connection.
+				 * Because only fully discovered Peers may be selected for
+				 * 	begin connected, the specific one must be contained
+				 * 	within list<Peer> peers.
+				 *
+				 */
+				if (msg.at(0) == AP_STA_CONNECTED) {
+					Peer connected_peer(msg.at(2).substr(13));
+					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), connected_peer);
+
+					if (peer_it != peers.end()) {
+						connections.front().setPeer(*peer_it);
+						ext_if.connectionEstablished(connections.front());
+					}
+				}
+
+
+				/* EVENT >> [AP_STA_DISCONNECTED]
+				 *
+				 * Maybe the GO had removed the p2p_group or, after a
+				 * 	longer timeout, a connected non-GO station had
+				 * 	removed its p2p_group_connection, i.e. the corresponding
+				 * 	virtual interface.
+				 *
+				 */
+				if (msg.at(0) == AP_STA_DISCONNECTED) {
+
+					string mac_lost = msg.at(2).substr(13);
+
+					list<Connection>::iterator it = connections.begin();
+
+					for (; it != connections.end(); ++it) {
+						if (it->getPeer().getMacAddr() == mac_lost) {
+							disconnect((*it));
+							ext_if.connectionLost(*it);
 						}
 					}
 				}
 
-				//EVENT >> p2p_device_lost (device or connection lost for reasons unknown)
+				/* EVENT >> [GROUP_NEG_REQUEST]
+				 *
+				 * That is a connection request.
+				 * Checks whether requesting peer is fully discovered
+				 *  or not. If so, the the connect command will automatically
+				 *  be called at wpa_s. Else if, ext_if will be called.
+				 *
+				 */
+				if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
+
+					Peer temp_p(msg.at(1));
+
+					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), temp_p);
+
+					if (peer_it != peers.end()) {
+						connectToPeer(*peer_it);
+					} else {
+						ext_if.peerFound(*peer_it);
+					}
+				}
+
+				// EVENT >> p2p_device_lost (device or connection lost for reasons unknown)
+				// TODO Very likely not needed. CHECK!
+				/*
 				if (msg.at(0) == P2P_EVENT_DEVICE_LOST) {
 					string mac_lost = msg.at(1).substr(13);
 					list<Connection>::iterator it = connections.begin();
@@ -349,38 +382,12 @@ namespace wifip2p {
 							continue;
 					}
 				}
-
-				//EVENT >> group_formation_failure
-				/*if (msg.at(0) == P2P_EVENT_GO_NEG_FAILURE
-							|| msg.at(0) == P2P_EVENT_GROUP_FORMATION_FAILURE) {
-						list<Peer>::iterator it = peers->begin();
-						for (; it != peers->end(); ++it) {
-							if (*it->getName() == )
-						}
-
-					}*/
+				*/
 
 				/* EVENT >> [RECEIVED_SERVICE_ REQUEST]
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
-					/*
-					 * 1) Nachgucken, ob peer fully_discovered.
-					 * 		JA: Hat Service an dem this interessiert ist zu bieten
-					 * 			=> kann ext_if mit peerFound(peer) anrufen
-					 * 		NEIN:
-					 * 			Unbekannt ob interessante services.
-					 * 			=> (i) 	sdreq an peer starten.
-					 * 					 über alle eigenen Services loopen.
-					 * 			   (ii)	wenn daraufhin irgendwann (= CoreEngine.state egal)
-					 * 			   		 irgendeine positive antwort auf einen der
-					 * 			   		 sdreq's erfolgt, wird gemäß EVENT (siehe
-					 * 			   		 P2P_EVENT_SERV_DISC_RESP) der peer fully_discovered
-					 * 			   		 in "peers" gesetzt und extif angerufen.
-					 * 			   		ansonsten kann der peer aus der liste
-					 * 			   		 "peers" gelöscht werden
-					 *
-					 */
 					Peer p(msg.at(2));
 
 					list<Peer>::const_iterator peer_it = find(peers.begin(),
@@ -399,16 +406,17 @@ namespace wifip2p {
 					}
 				}
 
-				//EVENT >> retrieved_service_response
-				/*
-				 * The return of not only the upnp sd_resp header with empty data
-				 * 	implies the specific peer to host at least on requested service.
-				 * 	An Iterator checks, if that peer is already contained in the
-				 * 	peers list. If not, that peer is pushed to the list; else, the list
-				 * 	remains unchanged and ext_if.peerFound(Peer) gets called.
-				 * If only the upnp sd_resp header with empty data is returned, which
-				 * 	implies the service not being hosted at that peer, the specific
-				 * 	peer will be deleted from the peers list.
+				/* EVENT >> [RECEIVED_SERVICE_RESPONSE]
+				 *
+				 * The return of not only the upnp sd_resp header with empty
+				 * 	data implies the specific peer to host at least on
+				 * 	requested service. An Iterator checks, if that peer is
+				 * 	already contained in the peers list. If not, that peer
+				 * 	is pushed to the list; else, the list remains unchanged
+				 * 	and ext_if.peerFound(Peer) gets called.
+				 * If only the upnp sd_resp header with empty data is returned,
+				 *  which implies the service not being hosted at that peer,
+				 *  the specific peer will be deleted from the peers list.
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
@@ -422,8 +430,22 @@ namespace wifip2p {
 							} else {
 								list<Peer>::iterator it = peers.begin();
 								for (; it != peers.end(); ++it) {
-									if (*it == p)
-										peers.erase(it);
+									/* TODO
+									 * /bin/sh: Zeile 5: 14029 Speicherzugriffsfehler
+									 * 		(Speicherabzug geschrieben) ${dir}$tst
+									 * FAIL: basetest
+									 *
+									 * >>
+									 *
+									 * probably done, got the hint to change
+									 * 	peers.erase(it)
+									 * 	  into
+									 * 	  it= peers.erase(it)
+									 *
+									 */
+									if (*it == p){
+										it = peers.erase(it);
+									}
 								}
 								p.setName(getPeerNameFromSDResp(msg.at(3)));
 								peers.push_back(p);
@@ -449,8 +471,9 @@ namespace wifip2p {
 					} else {
 						list<Peer>::iterator it = peers.begin();
 						for (; it != peers.end(); ++it) {
-							if (it->getMacAddr() == msg.at(1))
+							if (it->getMacAddr() == msg.at(1)) {
 								peers.erase(it);
+							}
 						}
 					}
 				}
@@ -481,16 +504,16 @@ namespace wifip2p {
 			if (sdreq_id != NULL) {
 				string returned_id;
 				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ BROADCAST
-						+ SERVDISC_TYPE
-						+ SERVDISC_VERS
+						+ BROADCAST + " "
+						+ SERVDISC_TYPE + " "
+						+ SERVDISC_VERS + " "
 						+ service, &returned_id);
 				sdreq_id->push_back(returned_id);
 			} else {
 				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ BROADCAST
-						+ SERVDISC_TYPE
-						+ SERVDISC_VERS
+						+ BROADCAST + " "
+						+ SERVDISC_TYPE + " "
+						+ SERVDISC_VERS + " "
 						+ service, NULL);
 			}
 		} catch (SupplicantHandleException &ex) {
@@ -522,16 +545,16 @@ namespace wifip2p {
 			if (sdreq_id != NULL) {
 				string returned_id;
 				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ peer.getMacAddr()
-						+ SERVDISC_TYPE
-						+ SERVDISC_VERS
+						+ peer.getMacAddr() + " "
+						+ SERVDISC_TYPE + " "
+						+ SERVDISC_VERS + " "
 						+ service, &returned_id);
 				sdreq_id->push_back(returned_id);
 			} else {
 				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ peer.getMacAddr()
-						+ SERVDISC_TYPE
-						+ SERVDISC_VERS
+						+ peer.getMacAddr() + " "
+						+ SERVDISC_TYPE + " "
+						+ SERVDISC_VERS + " "
 						+ service, NULL);
 			}
 		} catch (SupplicantHandleException &ex) {
@@ -540,7 +563,7 @@ namespace wifip2p {
 	}
 
 	/**
-	 * Cancels a pending service request, according to it's, id at wpa_s.
+	 * Cancels a pending service request, according to its id at wpa_s.
 	 *
 	 * @sdreq_id: The corresponding ID required to cancel a pending service request.
 	 *
@@ -556,12 +579,12 @@ namespace wifip2p {
 
 
 	/**
-	 * Creates a peering between this local and wpa_s controlled WNIC and Peer peer.
-	 * 	The method uses WPS Push Button Configuration (PBC). wpa_s will create a
-	 *  virtual WNIC per each connection which is going to be established. The virtual
-	 *  interface will be called "p2p-<HW-IF-name>-<#count>".
+	 * Creates a peering between this local and wpa_s controlled WNIC and Peer
+	 *  peer. The method uses WPS Push Button Configuration (PBC). wpa_s will
+	 *  create a virtual WNIC per each connection which is going to be established.
+	 *  The virtual interface will be called "p2p-<HW-IF-name>-<#count>".
 	 *
-	 * @peer the peer to which wpa_s should initiate a connection.
+	 * @peer: The peer to which wpa_s should initiate a connection.
 	 *
 	 */
 	void SupplicantHandle::connectToPeer(Peer peer) throw (SupplicantHandleException) {
@@ -573,11 +596,13 @@ namespace wifip2p {
 	}
 
 	/**
-	 * By now, this method only handles to remove wpa_s' created virtual WNICs, thus
-	 *  disconnecting both of the group's peers.
-	 * This is sufficient, as SupplicantHandle::connectToPeer(Peer) does not deal with
-	 *  joining a P2P group, whether available, but just always creates exactly one
-	 *  peering between each two devices in a separate group.
+	 * By now, this method only handles to remove wpa_s' created virtual WNICs,
+	 *  thus disconnecting both of a group's peers.
+	 * This is sufficient, as SupplicantHandle::connectToPeer(Peer) does not deal
+	 * 	with joining a P2P group, whether available, but just always creates
+	 * 	exactly one peering between each two devices in a separate group.
+	 *
+	 * @conn: The Connection which stores the interface to be removed.
 	 *
 	 */
 	void SupplicantHandle::disconnect(Connection conn) throw (SupplicantHandleException) {
@@ -622,9 +647,11 @@ namespace wifip2p {
 		if (ret == -2)
 			throw SupplicantHandleException("wpa_s ctrl_i/f; communication timed out.");
 
-		/**	May be uncommented for testing purposes, to enable getting insight into actual
-		 * 	 command and variable statuses, which else would have been hidden by flying
-		 * 	 exceptions, in case of errors.
+		/* May be uncommented for testing purposes. Enables getting
+		 * 	insight into actual command and variable statuses, which else
+		 * 	would have been hidden by flying exceptions, in case of
+		 * 	errors.
+		 *
 		 */
 		//cout << cmd << endl;
 		//cout << "reply_buf: " << reply_buf << endl;
@@ -683,8 +710,9 @@ namespace wifip2p {
 			++i;
 		}
 
-		/** Only for testing purposes. Uncomment to get insight on vector's
-		 * 	 values.
+		/* Only for testing purposes. Uncomment to get insight on vector's
+		 * 	values.
+		 *
 		 */
 		//vector<string>::iterator it = ret_vec.begin();
 		//for (; it != ret_vec.end(); ++it)
@@ -712,9 +740,10 @@ namespace wifip2p {
 	}
 
 	/**
-	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain socket.
-	 * Initializes the attached domain sockets FileDescriptor as returned by the
-	 * 	proper wpa_s control_i/f's function.
+	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain
+	 * 	socket.
+	 * Initializes the attached domain sockets FileDescriptor as returned by
+	 * 	the proper wpa_s control_i/f's function.
 	 *
 	 * Returns: true, if the monitor may be set. false, otherwise.
 	 *
