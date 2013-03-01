@@ -27,6 +27,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		list<string> services;
 		services.push_back("Serv1");
 		services.push_back("Serv2");
+		services.push_back("TollerService");
 		this->init("DevName", services);
 
 		list<string> sdreq_id;

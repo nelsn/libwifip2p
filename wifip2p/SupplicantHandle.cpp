@@ -69,10 +69,12 @@ namespace wifip2p {
 	*/
 
 	/**
-	 * @*ctrl_path: Here, _handle is defined, representing the now opened control_i/f
-	 * 				 of wpa_s as expected behind the *ctrl_path parameter.
-	 * 				 E.g. when wpa_s is bound to hardware interface wlan0, fully qualified
-	 * 				 *ctrl_path needs to match "/var/run/wpa_supplicant/wlan0"
+	 * @*ctrl_path: Here, _handle is defined, representing the now opened
+	 * 				 control_i/f of wpa_s as expected behind the *ctrl_path
+	 * 				 parameter.
+	 * 				 E.g. when wpa_s is bound to hardware interface wlan0,
+	 * 				 fully qualified *ctrl_path needs to match
+	 * 				 "/var/run/wpa_supplicant/wlan0"
 	 */
 	void SupplicantHandle::open(const char *ctrl_path) throw (SupplicantHandleException) {
 
@@ -220,17 +222,19 @@ namespace wifip2p {
 
 				wpa_ctrl_recv((struct wpa_ctrl*)_handle, &buf[0], &len);
 
-				vector<string> msg = msgDecompose(buf);
+				//cout << "buffer generating" << endl;
 
-				cout << "RECV: " << len << " bytes, " << std::string(buf, len) << endl;
+				string buffer(buf+3, len-3);
+				vector<string> msg = msgDecompose(buffer);
 
-				//for testing purposes: prints out every cmd's event-message
-				cout << msg.at(0) << endl;
+				//cout << "RECV: " << len << " bytes, " << std::string(buf, len) << endl;
 
 				/* EVENT >> [DEVICE_FOUND]
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
+
+					cout << "EVENT >> [DEVICE_FOUND]" << endl;
 
 					/* With msg.at(1) one may get the MAC immediately, but this
 					 *  place especially not stores the hardware interface's MAC,
@@ -263,15 +267,25 @@ namespace wifip2p {
 					         */
 					    	cout << "call back ext_if with fully discovered peer" << endl;
 					        ext_if.peerFound(*peer_it);
-					    } else {
+					    } //else {
+					    	//
+					    	//TODO [!!!!]
+					    	//
+					    	// DIESEN BLOCK AUSLAGERN IN DIE CORE_ENGINE!
+					    	// Dort sollen alle lokal registrierten Services per broadcast
+					    	//	an all Peers gehen.
+					    	// Der Request wie in diesem Block, ist nötig für eingehende
+					    	//	service_requests, sofern der anfragende Peer nicht bereits
+					    	//	fully_discovered (~ bekannt) ist.
+					    	//
 					    	/* peer_it is not fully_discovered yet
 					    	 * 	=> start service_discovery@peer_it
 					    	 */
-					    	cout << "peer not fully discovered. request services" << endl;
-					        list<string>::iterator it = services.begin();
-					        for (; it != services.end(); ++it)
-					            requestService(*peer_it, *it, &sdreq_id);
-					    }
+					    //	cout << "peer not fully discovered. request services" << endl;
+					    //    list<string>::iterator it = services.begin();
+					    //    for (; it != services.end(); ++it)
+					    //       requestService(*peer_it, *it, &sdreq_id);
+					    //}
 					}
 				}
 
@@ -285,6 +299,9 @@ namespace wifip2p {
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
+
+					cout << "EVENT >> [GROUP_STARTED]" << endl;
+
 					if (msg.at(2) == "GO") {
 						NetworkIntf go_nic(msg.at(1));
 						Connection new_conn(go_nic);
@@ -325,6 +342,9 @@ namespace wifip2p {
 				 *
 				 */
 				if (msg.at(0) == AP_STA_CONNECTED) {
+
+					cout << "EVENT >> [AP_STA_CONNECTED]" << endl;
+
 					//cout << "Occurence (3)" << endl;
 					Peer connected_peer(msg.at(2).substr(13));
 					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), connected_peer);
@@ -345,6 +365,8 @@ namespace wifip2p {
 				 *
 				 */
 				if (msg.at(0) == AP_STA_DISCONNECTED) {
+
+					cout << "EVENT >> [AP_STA_DISCONNECTED]" << endl;
 
 					//cout << "Occurence (4)" << endl;
 					string mac_lost = msg.at(2).substr(13);
@@ -368,6 +390,8 @@ namespace wifip2p {
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
+
+					cout << "EVENT >> [GROUP_NEG_REQUEST]" << endl;
 
 					Peer temp_p(msg.at(1));
 
@@ -395,10 +419,13 @@ namespace wifip2p {
 				}
 				*/
 
-				/* EVENT >> [RECEIVED_SERVICE_ REQUEST]
+				/* EVENT >> [RECEIVED_SERVICE_REQUEST]
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
+
+					cout << "EVENT >> [RECEIVED_SERVICE_REQUEST]" << endl;
+
 					Peer p(msg.at(2));
 
 					list<Peer>::const_iterator peer_it = find(peers.begin(),
@@ -431,6 +458,9 @@ namespace wifip2p {
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
+
+					cout << "EVENT >> [RECEIVED_SERVICE_RESPONSE]" << endl;
+
 					if (msg.at(3) != "0300020101") {
 						Peer p(msg.at(1));
 						list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
@@ -459,13 +489,17 @@ namespace wifip2p {
 									}
 								}
 								//cout << "Occurence (4b)" << endl;
-								cout << msg.at(3);
-								cout << endl;
-								p.setName(getPeerNameFromSDResp(msg.at(3).substr(12)));
-								peers.push_back(p);
+								cout << "Message " << msg.at(3) << "; length = " <<
+										msg.at(3).length() << endl;
+								if (msg.at(3).length() > 11) {
+									p.setName(getPeerNameFromSDResp(msg.at(3).substr(12))); //.substr(12)
+									peers.push_back(p);
+								} else {
+									cout << "Non-confirm service registered at " << p.getMacAddr() << endl;
+								}
 							}
 						} else {
-							p.setName(getPeerNameFromSDResp(msg.at(3).substr(12)));
+							p.setName(getPeerNameFromSDResp(msg.at(3))); //.substr(12)
 							peers.push_back(p);
 						}
 							// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
@@ -695,9 +729,9 @@ namespace wifip2p {
 	 * @char: 	Awaits a wpa_s event message for input.
 	 * Returns: string array, [0] = msg type, [..]
 	 */
-	vector<string> SupplicantHandle::msgDecompose(char* buf) {
+	vector<string> SupplicantHandle::msgDecompose(string buffer) {
 
-		string buffer(buf+3);
+		//string buffer(buf+3);
 		vector<string> ret = tokenize(" ", buffer, -1);
 		ret[0] += " ";
 		return ret;
@@ -800,6 +834,8 @@ namespace wifip2p {
 	 */
 	string SupplicantHandle::getPeerNameFromSDResp(string tlv) {
 
+		cout << "TLV  : " << tlv << endl;
+
 		string result;
 
 		bool x = true;
@@ -817,10 +853,12 @@ namespace wifip2p {
 				x = !x;
 
 				int want = secnd + first;
-				//cout << (char) want;
+				cout << (char) want;
 				result.push_back((char) want);
 			}
 		}
+
+		cout << endl;
 
 		return result;
 	}

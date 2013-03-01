@@ -76,7 +76,6 @@ private:
 	bool monitor_mode;
 	void *_handle;
 
-	vector<string> tokenize(string token, string data, size_t max) const;
 
 	bool setMonitorMode() throw (SupplicantHandleException);
 
@@ -86,7 +85,8 @@ private:
 
 	bool p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException);
 
-	vector<string> msgDecompose(char *buf);
+	vector<string> msgDecompose(string buf);
+	vector<string> tokenize(string token, string data, size_t max) const;
 
 	short hexlookup(char c);
 
