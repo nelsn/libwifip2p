@@ -15,6 +15,7 @@
 #include <iostream>
 #include <unistd.h>	//recvReply FD operations accordingly to http://www.kernel.org/doc/man-pages/online/pages/man2/read.2.html
 #include <common/wpa_ctrl.h>
+#include <string.h>
 
 using namespace std;
 
@@ -213,12 +214,15 @@ namespace wifip2p {
 //				cout << "Pending? " << x << endl;
 
 			char buf[256];
-			size_t len;
+			size_t len = 256;
 
 			if (wpa_ctrl_pending((struct wpa_ctrl*)_handle) > 0) {
 
-				wpa_ctrl_recv((struct wpa_ctrl*)_handle, buf, &len);
+				wpa_ctrl_recv((struct wpa_ctrl*)_handle, &buf[0], &len);
+
 				vector<string> msg = msgDecompose(buf);
+
+				cout << "RECV: " << len << " bytes, " << std::string(buf, len) << endl;
 
 				//for testing purposes: prints out every cmd's event-message
 				cout << msg.at(0) << endl;
@@ -236,6 +240,10 @@ namespace wifip2p {
 					 *  msg.at(2): 			  "p2p_dev_addr=<MAC-ADDR>"
 					 *  msg.at(2).substr(13): "<MAC-ADDR>"
 					 */
+					//cout << "Occurence (1)  : " << msg.at(2) << endl;
+
+					//if (msg.at(2).length() <=13) return;
+
 					string mac(msg.at(2).substr(13));
 					cout << "Peer found " << mac << endl;
 					Peer p(mac);
@@ -286,6 +294,7 @@ namespace wifip2p {
 						 */
 						if (msg.at(2) == "client") {
 
+							//cout << "Occurence (2)" << endl;
 							Peer temp_p(msg.at(6).substr(12));
 							NetworkIntf nic(msg.at(1));
 
@@ -316,6 +325,7 @@ namespace wifip2p {
 				 *
 				 */
 				if (msg.at(0) == AP_STA_CONNECTED) {
+					//cout << "Occurence (3)" << endl;
 					Peer connected_peer(msg.at(2).substr(13));
 					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), connected_peer);
 
@@ -336,6 +346,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == AP_STA_DISCONNECTED) {
 
+					//cout << "Occurence (4)" << endl;
 					string mac_lost = msg.at(2).substr(13);
 
 					list<Connection>::iterator it = connections.begin();
@@ -447,11 +458,14 @@ namespace wifip2p {
 										it = peers.erase(it);
 									}
 								}
-								p.setName(getPeerNameFromSDResp(msg.at(3)));
+								//cout << "Occurence (4b)" << endl;
+								cout << msg.at(3);
+								cout << endl;
+								p.setName(getPeerNameFromSDResp(msg.at(3).substr(12)));
 								peers.push_back(p);
 							}
 						} else {
-							p.setName(getPeerNameFromSDResp(msg.at(3)));
+							p.setName(getPeerNameFromSDResp(msg.at(3).substr(12)));
 							peers.push_back(p);
 						}
 							// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
@@ -658,6 +672,7 @@ namespace wifip2p {
 
 		string reply(reply_buf, reply_len);
 
+		//cout << "Occurence (5)" << endl;
 		if (reply.substr(0, reply_len -1) == "FAIL") {
 			throw SupplicantHandleException("wpa_s was not able to initiate <" + cmd + "> successfully.");
 		} else {
@@ -682,86 +697,132 @@ namespace wifip2p {
 	 */
 	vector<string> SupplicantHandle::msgDecompose(char* buf) {
 
-		string buffer(buf);
-
-		int k=1;
-		for (int i=0; i<buffer.length(); i++) {
-			if (buffer[i] == ' ' && i != buffer.length()-1) 
-				++k;
-		}
-		
-		vector<string> ret_vec;
-		int i=0, dif;
-		size_t pos, npos;
-		npos = buffer.find(' ');
-
-		/** [+1] in order to additionally fetch the ending-blank			*
-		 * 	[-3] in order to equalize the event msgs' introductory "<3>" 	*/
-		dif = (npos + 1) - 3;
-
-		ret_vec.push_back(buffer.substr(3, dif)); //substr(startpos, steps)
-		++i;
-
-		while (i<k) {
-			pos = npos;
-			npos = buffer.find(' ', pos+1);
-			dif = npos - pos - 1;
-			ret_vec.push_back(buffer.substr(pos+1, dif));
-			++i;
-		}
-
-		/* Only for testing purposes. Uncomment to get insight on vector's
-		 * 	values.
-		 *
-		 */
-		//vector<string>::iterator it = ret_vec.begin();
-		//for (; it != ret_vec.end(); ++it)
-		//	cout << *it << endl;
-
-		return ret_vec;
-
+		string buffer(buf+3);
+		vector<string> ret = tokenize(" ", buffer, -1);
+		ret[0] += " ";
+		return ret;
+//
+//		int k=1;
+//		for (int i=0; i<buffer.length(); i++) {
+//			if (buffer[i] == ' ' && i != buffer.length()-1)
+//				++k;
+//		}
+//
+//		vector<string> ret_vec;
+//		int i=0, dif;
+//		size_t pos, npos;
+//		npos = buffer.find(' ');
+//
+//		/** [+1] in order to additionally fetch the ending-blank			*
+//		 * 	[-3] in order to equalize the event msgs' introductory "<3>" 	*/
+//		dif = (npos + 1) - 3;
+//
+//		//cout << "Occurence (6)" << endl;
+//		ret_vec.push_back(buffer.substr(3, dif)); //substr(startpos, steps)
+//		++i;
+//
+//		while (i<k) {
+//			pos = npos;
+//			npos = buffer.find(' ', pos+1);
+//			dif = npos - pos - 1;
+//			//cout << "Occurence (7)" << endl;
+//			ret_vec.push_back(buffer.substr(pos+1, dif));
+//			++i;
+//		}
+//
+//		/* Only for testing purposes. Uncomment to get insight on vector's
+//		 * 	values.
+//		 *
+//		 */
+//		//vector<string>::iterator it = ret_vec.begin();
+//		//for (; it != ret_vec.end(); ++it)
+//		//	cout << *it << endl;
+//
+//		return ret_vec;
+//
 	}
 
+	vector<string> SupplicantHandle::tokenize(string token, string data, size_t max) const
+	{
+		vector<string> l;
+		string value;
+
+		// Skip delimiters at beginning.
+		string::size_type pos = data.find_first_not_of(token, 0);
+
+		while (pos != string::npos)
+		{
+			// Find first "non-delimiter".
+			string::size_type tokenPos = data.find_first_of(token, pos);
+
+			// Found a token, add it to the vector.
+			if(tokenPos == string::npos){
+				value = data.substr(pos);
+				l.push_back(value);
+				break;
+			} else {
+				value = data.substr(pos, tokenPos - pos);
+				l.push_back(value);
+			}
+			// Skip delimiters.  Note the "not_of"
+			pos = data.find_first_not_of(token, tokenPos);
+			// Find next "non-delimiter"
+			tokenPos = data.find_first_of(token, pos);
+
+			// if maximum reached
+			if (l.size() >= max && pos != string::npos)
+			{
+				// add the remaining part to the vector as last element
+				l.push_back(data.substr(pos, data.length() - pos));
+
+				// and break the search loop
+				break;
+			}
+		}
+
+		return l;
+	}
+
+
 	/**
-	 * TODO <Implementation>
-	 * TODO <Description>
+	 * Converts hexadecimal input data to its proper ASCII coded
+	 * 	string representation.
+	 * Needs helper function SupplicantHandle::hexlookup().
 	 *
-	 * @string: The TLV received as service discovery response. Independently
-	 * 			 of wpa_s' specifications, this method may actually only deal with
-	 * 			 service entries at opposite stations, which do not overflow the
-	 * 			 total size of 65535 Byte, which equals FFFF as length in the
-	 * 			 respective TLV header. The original TLV length field is coded as
-	 * 			 2 Byte little endian hexdump value.
-	 * Return:
+	 * @string: The TLV received from a service discovery response.
+	 * 			 That is only response frame's data, not its header.
+	 * 			 Independently of wpa_s' specification, this method
+	 * 			 may actually only deal with service entries at
+	 * 			 opposite stations, which do not overflow the total
+	 * 			 size of 65535 Byte, which equals FFFF as length.
+	 * Return:	A string representation of the TLV input data.
 	 *
 	 */
 	string SupplicantHandle::getPeerNameFromSDResp(string tlv) {
 
-		string s = "ThisDevicesName";
+		string result;
 
-		return s;
-
-		/*
-		string out;
 		bool x = true;
-		for (int i=0; i<tlv.length(); i++) {
-			if (x)
-				out.push_back(octetConv(tlv[i]));
-			else {
-				out.back() <<= 4;
-				out.back() += octetConv(tlv[i]);
-			}
-			x = !x;
-		}
-		return out;
-		*/
-	}
+		short secnd, first;
 
-	int SupplicantHandle::octetConv(char c) {
-		if (c < 'a')
-			return c - '0';
-		else
-			return 10 + c - 'a';
+		for (unsigned int i=0; i<tlv.length(); i++) {
+
+			if (x) {
+				secnd = hexlookup(tlv[i]) * 16;
+				//cout << "The second " << secnd << endl;
+				x = !x;
+			} else {
+				first = hexlookup(tlv[i]);
+				//cout << "The first " << first << endl;
+				x = !x;
+
+				int want = secnd + first;
+				//cout << (char) want;
+				result.push_back((char) want);
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -778,6 +839,60 @@ namespace wifip2p {
 			return true;
 		else
 			return false;
+	}
+
+	/**
+	 * Table lookup returning a short (decimal representation)
+	 * 	accordingly to the input character (hex representation).
+	 *
+	 * @c:	   hex input character [0-9,a-f]
+	 * Return: decimal equivalent [0-15]
+	 *
+	 */
+	short SupplicantHandle::hexlookup(char c) {
+		short ret;
+		switch (c) {
+			case 'a':
+				ret = 10;
+				break;
+			case 'A':
+				ret = 10;
+				break;
+			case 'b':
+				ret = 11;
+				break;
+			case 'B':
+				ret = 11;
+				break;
+			case 'c':
+				ret = 12;
+				break;
+			case 'C':
+				ret = 12;
+				break;
+			case 'd':
+				ret = 13;
+				break;
+			case 'D':
+				ret = 13;
+				break;
+			case 'e':
+				ret = 14;
+				break;
+			case 'E':
+				ret = 14;
+				break;
+			case 'f':
+				ret = 15;
+				break;
+			case 'F':
+				ret = 15;
+				break;
+			default:
+				ret = c - '0';
+				break;
+		}
+		return ret;
 	}
 
 } /* namespace wifip2p */

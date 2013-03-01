@@ -76,6 +76,8 @@ private:
 	bool monitor_mode;
 	void *_handle;
 
+	vector<string> tokenize(string token, string data, size_t max) const;
+
 	bool setMonitorMode() throw (SupplicantHandleException);
 
 	bool setDeviceName(string name) throw (SupplicantHandleException);
@@ -86,7 +88,7 @@ private:
 
 	vector<string> msgDecompose(char *buf);
 
-	int octetConv(char c);
+	short hexlookup(char c);
 
 
 };
