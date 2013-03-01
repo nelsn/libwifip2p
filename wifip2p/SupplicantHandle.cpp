@@ -723,7 +723,7 @@ namespace wifip2p {
 	}
 
 	/**
-	 * TODO <Implementation, Priority: low>
+	 * TODO <Implementation>
 	 * TODO <Description>
 	 *
 	 * @string: The TLV received as service discovery response. Independently
@@ -736,7 +736,32 @@ namespace wifip2p {
 	 *
 	 */
 	string SupplicantHandle::getPeerNameFromSDResp(string tlv) {
-		;
+
+		string s = "ThisDevicesName";
+
+		return s;
+
+		/*
+		string out;
+		bool x = true;
+		for (int i=0; i<tlv.length(); i++) {
+			if (x)
+				out.push_back(octetConv(tlv[i]));
+			else {
+				out.back() <<= 4;
+				out.back() += octetConv(tlv[i]);
+			}
+			x = !x;
+		}
+		return out;
+		*/
+	}
+
+	int SupplicantHandle::octetConv(char c) {
+		if (c < 'a')
+			return c - '0';
+		else
+			return 10 + c - 'a';
 	}
 
 	/**

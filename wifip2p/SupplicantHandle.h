@@ -69,6 +69,9 @@ public:
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
+	string getPeerNameFromSDResp(string tlv);
+
+
 private:
 	bool monitor_mode;
 	void *_handle;
@@ -83,8 +86,7 @@ private:
 
 	vector<string> msgDecompose(char *buf);
 
-	// TODO IMPLEMENTATIN (Priority: low)
-	string getPeerNameFromSDResp(string tlv);
+	int octetConv(char c);
 
 
 };
