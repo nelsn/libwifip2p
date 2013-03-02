@@ -60,16 +60,16 @@ public:
 			list<string> &sdreq_id,
 			WifiP2PInterface &ext_if) throw (SupplicantHandleException);
 
-	void requestService(string service, list<string> *sdreq_id)
+	void requestService(string service, list<string> &sdreq_id)
 			throw (SupplicantHandleException);
-	void requestService(Peer peer, string service, list<string> *sdreq_id)
+	void requestService(Peer peer, string service, list<string> &sdreq_id)
 			throw (SupplicantHandleException);
 	void requestServiceCancel(string sdreq_id) throw (SupplicantHandleException);
 
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
-	string getPeerNameFromSDResp(string tlv);
+	string getStringFromHexTLV(string tlv);
 
 
 private:
@@ -85,7 +85,7 @@ private:
 
 	bool p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException);
 
-	vector<string> msgDecompose(string buf);
+	vector<string> msgDecompose(string buf, string tok);
 	vector<string> tokenize(string token, string data, size_t max) const;
 
 	short hexlookup(char c);

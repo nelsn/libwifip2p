@@ -225,7 +225,7 @@ namespace wifip2p {
 				//cout << "buffer generating" << endl;
 
 				string buffer(buf+3, len-3);
-				vector<string> msg = msgDecompose(buffer);
+				vector<string> msg = msgDecompose(buffer, " ");
 
 				//cout << "RECV: " << len << " bytes, " << std::string(buf, len) << endl;
 
@@ -267,25 +267,27 @@ namespace wifip2p {
 					         */
 					    	cout << "call back ext_if with fully discovered peer" << endl;
 					        ext_if.peerFound(*peer_it);
-					    } //else {
+					    } else {
 					    	//
 					    	//TODO [!!!!]
 					    	//
-					    	// DIESEN BLOCK AUSLAGERN IN DIE CORE_ENGINE!
+					    	// NUR ZUM TEST!!!!
+					    	// DIESEN BLOCK DANN AUSLAGERN IN DIE CORE_ENGINE!
 					    	// Dort sollen alle lokal registrierten Services per broadcast
 					    	//	an all Peers gehen.
-					    	// Der Request wie in diesem Block, ist nötig für eingehende
+					    	// Der Request wie in diesem Block ist nötig für eingehende
 					    	//	service_requests, sofern der anfragende Peer nicht bereits
 					    	//	fully_discovered (~ bekannt) ist.
 					    	//
 					    	/* peer_it is not fully_discovered yet
 					    	 * 	=> start service_discovery@peer_it
 					    	 */
-					    //	cout << "peer not fully discovered. request services" << endl;
-					    //    list<string>::iterator it = services.begin();
-					    //    for (; it != services.end(); ++it)
-					    //       requestService(*peer_it, *it, &sdreq_id);
-					    //}
+					    	cout << "peer not fully discovered. request services" << endl;
+					    	requestService(*peer_it, "IBRDTN", sdreq_id);
+//					    	list<string>::iterator it = services.begin();
+//					    	for (; it != services.end(); ++it)
+//					    		requestService(*peer_it, *it, &sdreq_id);
+					    }
 					}
 				}
 
@@ -419,7 +421,7 @@ namespace wifip2p {
 				}
 				*/
 
-				/* EVENT >> [RECEIVED_SERVICE_REQUEST]
+				/* EVENT >> [SERVICE_REQUEST_RECEIVED]
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
@@ -437,14 +439,14 @@ namespace wifip2p {
 						else { //p~peer_it not fully_discovered => DISCOVER!
 							list<string>::iterator it = services.begin();
 							for (; it != services.end(); ++it)
-								requestService(*peer_it, *it, &sdreq_id);
+								requestService(*peer_it, *it, sdreq_id);
 						}
 					} else {
 						peers.push_back(*peer_it);
 					}
 				}
 
-				/* EVENT >> [RECEIVED_SERVICE_RESPONSE]
+				/* EVENT >> [SERVICE_RESPONSE_RECEIVED]
 				 *
 				 * The return of not only the upnp sd_resp header with empty
 				 * 	data implies the specific peer to host at least on
@@ -461,46 +463,98 @@ namespace wifip2p {
 
 					cout << "EVENT >> [RECEIVED_SERVICE_RESPONSE]" << endl;
 
+					// non-empty service response received >>
 					if (msg.at(3) != "0300020101") {
 						Peer p(msg.at(1));
 						list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
 
+						/*
+						 * Peer found within peers >>
+						 *
+						 */
 						if (peer_it != peers.end()) {
+							// peer fully discovered already contained in list >>
 							if (peer_it->getName() != "") {
 								ext_if.peerFound(*peer_it);
+							// peer is in list, but _not_ fully discovered >>
 							} else {
+								/*
+								 * Remove temporarily (i.e. not fully discovered)
+								 *  peer from peers in order to now add a new,
+								 *  fully discovered non-duplicated one with the
+								 *  following processing >>
+								 *
+								 */
 								list<Peer>::iterator it = peers.begin();
 								for (; it != peers.end(); ++it) {
-									/* TODO
-									 * /bin/sh: Zeile 5: 14029 Speicherzugriffsfehler
-									 * 		(Speicherabzug geschrieben) ${dir}$tst
-									 * FAIL: basetest
-									 *
-									 * >>
-									 *
-									 * probably done, got the hint to change
-									 * 	peers.erase(it)
-									 * 	  into
-									 * 	  it= peers.erase(it)
-									 *
-									 */
 									if (*it == p){
 										it = peers.erase(it);
 									}
 								}
+
 								//cout << "Occurence (4b)" << endl;
 								cout << "Message " << msg.at(3) << "; length = " <<
 										msg.at(3).length() << endl;
-								if (msg.at(3).length() > 11) {
-									p.setName(getPeerNameFromSDResp(msg.at(3).substr(12))); //.substr(12)
-									peers.push_back(p);
+								// TLV data assumed to contain proper information
+								if (msg.at(3).length() > 10) {
+									/*
+									 * Convention: Services are registered at
+									 * 	peers wpa_s' like
+									 *
+									 * 	<ServiceName_string>$<DeviceName_string>
+									 *
+									 * 	so a typical string representation of
+									 * 	a TLV would look like
+									 * 	"SomeService$SomeArbitraryDeviceName"
+									 * Otherwise, a message will be written to
+									 * 	std::cerr.
+									 *
+									 */
+
+									string tlv = getStringFromHexTLV(msg.at(3).substr(12));
+									string name;
+									unsigned int pos = tlv.find_first_of('$');
+
+									if (pos < tlv.length()) {
+										name = tlv.substr(pos+1);
+									} else {
+										cerr << "No conventionally-confirm DeviceName "
+												<< "readable" << endl;
+									}
+
+									if (name != "") {
+										p.setName(name);
+										peers.push_back(p);
+									} else {
+										cerr << "No conventionally-confirm DeviceName "
+												<< "readable" << endl;
+									}
 								} else {
-									cout << "Non-confirm service registered at " << p.getMacAddr() << endl;
+									cout << "No conventionally-confirm service registered at "
+											<< p.getMacAddr() << endl;
 								}
 							}
+						/*
+						 * Peer not found within peers. Will now try to get
+						 * 	a proper name from the TLV and push the new peer to
+						 * 	peers.
+						 *
+						 */
 						} else {
-							p.setName(getPeerNameFromSDResp(msg.at(3))); //.substr(12)
-							peers.push_back(p);
+							// TLV data assumed to contain proper information
+							if (msg.at(3).length() > 10) {
+								string name(msgDecompose(getStringFromHexTLV(msg.at(3).substr(12)), "$")[1]);
+								if (name != "") {
+									p.setName(name);
+									peers.push_back(p);
+								} else {
+									cerr << "No conventionally-confirm DeviceName readable"
+											<< endl;
+								}
+							} else {
+								cout << "No conventionally-confirm service registered at "
+										<< p.getMacAddr() << endl;
+							}
 						}
 							// TODO IMPLEMENT ::getPeerNameFromSDResp(string tlv)
 							/*
@@ -516,6 +570,7 @@ namespace wifip2p {
 							 * 	completely.
 							 *
 							 */
+					//empty service response received >>
 					} else {
 						list<Peer>::iterator it = peers.begin();
 						for (; it != peers.end(); ++it) {
@@ -546,24 +601,24 @@ namespace wifip2p {
 	 * 			   -- though no more considered (and replied) by peers, which were
 	 * 			   able to handle it properly; others would be penetrated.
 	 */
-	void SupplicantHandle::requestService(string service, list<string> *sdreq_id)
+	void SupplicantHandle::requestService(string service, list<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
-			if (sdreq_id != NULL) {
+//			if (sdreq_id != NULL) {
 				string returned_id;
 				this->p2pCommand("P2P_SERV_DISC_REQ "
 						+ BROADCAST + " "
 						+ SERVDISC_TYPE + " "
 						+ SERVDISC_VERS + " "
 						+ service, &returned_id);
-				sdreq_id->push_back(returned_id);
-			} else {
-				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ BROADCAST + " "
-						+ SERVDISC_TYPE + " "
-						+ SERVDISC_VERS + " "
-						+ service, NULL);
-			}
+				sdreq_id.push_back(returned_id);
+//			} else {
+//				this->p2pCommand("P2P_SERV_DISC_REQ "
+//						+ BROADCAST + " "
+//						+ SERVDISC_TYPE + " "
+//						+ SERVDISC_VERS + " "
+//						+ service, NULL);
+//			}
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -587,24 +642,25 @@ namespace wifip2p {
 	 * 				service later.
 	 *
 	 */
-	void SupplicantHandle::requestService(Peer peer, string service, list<string> *sdreq_id)
+	void SupplicantHandle::requestService(Peer peer, string service, list<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
-			if (sdreq_id != NULL) {
+			cout << "ServiceRequest!!!" << endl;
+//			if (sdreq_id != NULL) {
 				string returned_id;
 				this->p2pCommand("P2P_SERV_DISC_REQ "
 						+ peer.getMacAddr() + " "
 						+ SERVDISC_TYPE + " "
 						+ SERVDISC_VERS + " "
 						+ service, &returned_id);
-				sdreq_id->push_back(returned_id);
-			} else {
-				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ peer.getMacAddr() + " "
-						+ SERVDISC_TYPE + " "
-						+ SERVDISC_VERS + " "
-						+ service, NULL);
-			}
+				sdreq_id.push_back(returned_id);
+//			} else {
+//				this->p2pCommand("P2P_SERV_DISC_REQ "
+//						+ peer.getMacAddr() + " "
+//						+ SERVDISC_TYPE + " "
+//						+ SERVDISC_VERS + " "
+//						+ service, NULL);
+//			}
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -618,7 +674,10 @@ namespace wifip2p {
 	 */
 	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
 		try {
-			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, NULL);
+			string *fb;
+			cout << "ServiceRquest_ID : " << sdreq_id << endl;
+			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, fb);
+			cout << "reqServCancel feedback : " << &fb << endl;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -701,8 +760,8 @@ namespace wifip2p {
 		 * 	errors.
 		 *
 		 */
-		//cout << cmd << endl;
-		//cout << "reply_buf: " << reply_buf << endl;
+		cout << cmd << endl;
+		cout << "reply_buf: " << reply_buf << endl;
 
 		string reply(reply_buf, reply_len);
 
@@ -712,6 +771,7 @@ namespace wifip2p {
 		} else {
 			if (direct_feedback != NULL)
 				direct_feedback = &reply;
+				cout << "FEEDBACK : " << &direct_feedback << endl;
 			return true;
 		}
 
@@ -726,13 +786,15 @@ namespace wifip2p {
 	 * 	The first value within the returned string array represents
 	 * 	the event type while the following depend on that type.
 	 *
-	 * @char: 	Awaits a wpa_s event message for input.
-	 * Returns: string array, [0] = msg type, [..]
+	 * @buffer: string awaited, representing the service response's
+	 * 			 TLV data.
+	 * @tok	  : string token by which to separate the input buffer.
+	 * Returns: vector<string> of the separated buffer parts.
 	 */
-	vector<string> SupplicantHandle::msgDecompose(string buffer) {
+	vector<string> SupplicantHandle::msgDecompose(string buffer, string tok) {
 
 		//string buffer(buf+3);
-		vector<string> ret = tokenize(" ", buffer, -1);
+		vector<string> ret = tokenize(tok, buffer, -1);
 		ret[0] += " ";
 		return ret;
 //
@@ -832,7 +894,7 @@ namespace wifip2p {
 	 * Return:	A string representation of the TLV input data.
 	 *
 	 */
-	string SupplicantHandle::getPeerNameFromSDResp(string tlv) {
+	string SupplicantHandle::getStringFromHexTLV(string tlv) {
 
 		cout << "TLV  : " << tlv << endl;
 

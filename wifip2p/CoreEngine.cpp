@@ -86,7 +86,7 @@ void CoreEngine::run() {
 
 			list<string>::iterator it = services.begin();
 			for (; it != services.end(); ++it)
-				wpasup.requestService(*it, &sdreq_id);
+				wpasup.requestService(*it, sdreq_id);
 
 			do {
 				if (!timer.isRunning())

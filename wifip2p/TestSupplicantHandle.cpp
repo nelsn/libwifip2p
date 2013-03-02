@@ -27,7 +27,8 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		list<string> services;
 		services.push_back("Serv1");
 		services.push_back("Serv2");
-		services.push_back("TollerService");
+		services.push_back("IBRDTN");
+		services.push_back("Whatever");
 		this->init("DevName", services);
 
 		list<string> sdreq_id;
@@ -57,8 +58,23 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		//this->connectToPeer(p1);
 		//this->disconnect(conn);
 
-		for (int i=10000000; i!=0; i--)
-			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
+		this->requestService("Serv", sdreq_id);
+
+
+//		for (int i=10000000; i!=0; i--) {
+//			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
+//
+//		}
+//
+//		list<Peer>::iterator it = peers.begin();
+//		for (; it != peers.end(); ++it) {
+//			cout << "Peer: " << it->getMacAddr() << "_" << it->getName() << endl;
+//		}
+//
+//		list<string>::iterator id_it = sdreq_id.begin();
+//		for (; id_it != sdreq_id.end(); ++id_it) {
+//			requestServiceCancel(*id_it);
+//		}
 
 		/** Testing SupplicantHandle::msgDecompose(*char)
 		 * 	Method needs to be in SupplicantHandle's public section,
