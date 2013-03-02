@@ -267,6 +267,7 @@ namespace wifip2p {
 					         */
 					    	cout << "call back ext_if with fully discovered peer" << endl;
 					        ext_if.peerFound(*peer_it);
+					        this->connectToPeer(*peer_it);
 					    } else {
 					    	//
 					    	//TODO [!!!!]
@@ -289,6 +290,8 @@ namespace wifip2p {
 //					    		requestService(*peer_it, *it, &sdreq_id);
 					    }
 					}
+
+					cout << "[DEVICE_FOUND] << EVENT" << endl;
 				}
 
 				/* EVENT >> [GROUP_STARTED]
@@ -326,6 +329,8 @@ namespace wifip2p {
 							}
 						}
 					}
+
+					cout << "[GROUP_STARTED] << EVENT" << endl;
 				}
 
 				/* EVENT >> [AP_STA_CONNECTED]
@@ -355,6 +360,8 @@ namespace wifip2p {
 						connections.front().setPeer(*peer_it);
 						ext_if.connectionEstablished(connections.front());
 					}
+
+					cout << "[AP_STA_CONNECTED] << EVENT" << endl;
 				}
 
 
@@ -381,6 +388,8 @@ namespace wifip2p {
 							ext_if.connectionLost(*it);
 						}
 					}
+
+					cout << "[AP_STA_DISCONNECTED] << EVENT" << endl;
 				}
 
 				/* EVENT >> [GROUP_NEG_REQUEST]
@@ -404,6 +413,8 @@ namespace wifip2p {
 					} else {
 						ext_if.peerFound(*peer_it);
 					}
+
+					cout << "[GROUP_NEG_REQUEST] << EVENT" << endl;
 				}
 
 				// EVENT >> p2p_device_lost (device or connection lost for reasons unknown)
@@ -444,6 +455,8 @@ namespace wifip2p {
 					} else {
 						peers.push_back(*peer_it);
 					}
+
+					cout << "[RECEIVED_SERVICE_REQUEST] << EVENT" << endl;
 				}
 
 				/* EVENT >> [SERVICE_RESPONSE_RECEIVED]
@@ -579,6 +592,8 @@ namespace wifip2p {
 							}
 						}
 					}
+
+					cout << "[RECEIVED_SERVICE_RESPONSE] << EVENT" << endl;
 				}
 			}
 		} else {
@@ -604,21 +619,13 @@ namespace wifip2p {
 	void SupplicantHandle::requestService(string service, list<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
-//			if (sdreq_id != NULL) {
-				string returned_id;
-				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ BROADCAST + " "
-						+ SERVDISC_TYPE + " "
-						+ SERVDISC_VERS + " "
-						+ service, &returned_id);
-				sdreq_id.push_back(returned_id);
-//			} else {
-//				this->p2pCommand("P2P_SERV_DISC_REQ "
-//						+ BROADCAST + " "
-//						+ SERVDISC_TYPE + " "
-//						+ SERVDISC_VERS + " "
-//						+ service, NULL);
-//			}
+			string returned_id;
+			this->p2pCommand("P2P_SERV_DISC_REQ "
+					+ BROADCAST + " "
+					+ SERVDISC_TYPE + " "
+					+ SERVDISC_VERS + " "
+					+ service, &returned_id);
+			sdreq_id.push_back(returned_id);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -645,22 +652,13 @@ namespace wifip2p {
 	void SupplicantHandle::requestService(Peer peer, string service, list<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
-			cout << "ServiceRequest!!!" << endl;
-//			if (sdreq_id != NULL) {
-				string returned_id;
-				this->p2pCommand("P2P_SERV_DISC_REQ "
-						+ peer.getMacAddr() + " "
-						+ SERVDISC_TYPE + " "
-						+ SERVDISC_VERS + " "
-						+ service, &returned_id);
-				sdreq_id.push_back(returned_id);
-//			} else {
-//				this->p2pCommand("P2P_SERV_DISC_REQ "
-//						+ peer.getMacAddr() + " "
-//						+ SERVDISC_TYPE + " "
-//						+ SERVDISC_VERS + " "
-//						+ service, NULL);
-//			}
+			string returned_id;
+			this->p2pCommand("P2P_SERV_DISC_REQ "
+					+ peer.getMacAddr() + " "
+					+ SERVDISC_TYPE + " "
+					+ SERVDISC_VERS + " "
+					+ service, &returned_id);
+			sdreq_id.push_back(returned_id);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -674,10 +672,10 @@ namespace wifip2p {
 	 */
 	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
 		try {
-			string *fb;
+			//string *fb;
 			cout << "ServiceRquest_ID : " << sdreq_id << endl;
-			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, fb);
-			cout << "reqServCancel feedback : " << &fb << endl;
+			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, NULL);
+			//cout << "reqServCancel feedback : " << &fb << endl;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -739,15 +737,12 @@ namespace wifip2p {
 	 */
 	bool SupplicantHandle::p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException) {
 
-		const char *cmd_p;
-		cmd_p = cmd.c_str();
-
-		char 	reply_buf[64];
-		size_t 	reply_len = sizeof(reply_buf) - 1;
+		vector<char> reply_buf(64);
+		size_t buf_len = reply_buf.size();
 
 		int ret = wpa_ctrl_request((struct wpa_ctrl*) _handle,
-					cmd_p, cmd.length(),
-					*&reply_buf, &reply_len, NULL);
+					cmd.c_str(), cmd.length(),
+					&reply_buf[0], &buf_len, NULL);
 
 		if (ret == -1)
 			throw SupplicantHandleException("wpa_s ctrl_i/f; send or receive failed.");
@@ -760,18 +755,16 @@ namespace wifip2p {
 		 * 	errors.
 		 *
 		 */
-		cout << cmd << endl;
-		cout << "reply_buf: " << reply_buf << endl;
+		//cout << cmd << endl;
+		//cout << "reply_buf: " << &reply_buf[0] << endl;
 
-		string reply(reply_buf, reply_len);
+		string reply(&reply_buf[0], buf_len);
 
-		//cout << "Occurence (5)" << endl;
-		if (reply.substr(0, reply_len -1) == "FAIL") {
+		if (reply == "FAIL") {
 			throw SupplicantHandleException("wpa_s was not able to initiate <" + cmd + "> successfully.");
 		} else {
 			if (direct_feedback != NULL)
-				direct_feedback = &reply;
-				cout << "FEEDBACK : " << &direct_feedback << endl;
+				*direct_feedback = reply;
 			return true;
 		}
 

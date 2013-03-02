@@ -28,24 +28,30 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		services.push_back("Serv1");
 		services.push_back("Serv2");
 		services.push_back("IBRDTN");
-		services.push_back("Whatever");
+		//services.push_back("Whatever");
 		this->init("DevName", services);
 
 		list<string> sdreq_id;
 
-		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
-		Peer p2("30:39:26:00:e9:9e", "Android_9cd");
+//		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
+//		Peer p2("30:39:26:00:e9:9d", "Android_9cd");
 
 		list<Peer> peers;
-		peers.push_back(p1);
-		peers.push_back(p2);
+//		peers.push_back(p1);
+//		peers.push_back(p2);
 
 		list<Connection> connections;
 
-		NetworkIntf nic("p2p-wlan1-18");
-		Connection conn(p1, nic);
+//		NetworkIntf nic("p2p-wlan1-18");
+//		Connection conn(p1, nic);
 
 		TestExternalWifiP2P ext_if_dummy;
+
+		list<string>::iterator sdr_it = services.begin();
+		for (; sdr_it != services.end(); ++sdr_it) {
+			this->requestService(*sdr_it, sdreq_id);
+		}
+		this->findPeers();
 
 		/** Must-fails as tested with non-P2P compatible device, i.e.
 		 *	 (1) p2p_find not possible
@@ -54,27 +60,32 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		 *	 (3) as no connection to any peer is established, there simply
 		 *	 		is no virtual P2P group interface which may be removed
 		 */
-		this->findPeers();
 		//this->connectToPeer(p1);
 		//this->disconnect(conn);
 
-		this->requestService("Serv", sdreq_id);
+
+		for (int i=10000000; i!=0; i--) {
+			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
+		}
+
+		list<Peer>::iterator it = peers.begin();
+		for (; it != peers.end(); ++it) {
+			if (it->getName() != "")
+				this->connectToPeer(*it);
+			cout << "Peer: " << it->getMacAddr() << "_" << it->getName() << endl;
+		}
+
+		for (int i=10000000; i!=0; i--) {
+			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
+		}
 
 
-//		for (int i=10000000; i!=0; i--) {
-//			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
-//
-//		}
-//
-//		list<Peer>::iterator it = peers.begin();
-//		for (; it != peers.end(); ++it) {
-//			cout << "Peer: " << it->getMacAddr() << "_" << it->getName() << endl;
-//		}
-//
-//		list<string>::iterator id_it = sdreq_id.begin();
-//		for (; id_it != sdreq_id.end(); ++id_it) {
-//			requestServiceCancel(*id_it);
-//		}
+		cout << "# of sd_req's on air:  " << sdreq_id.size() << endl;
+
+		list<string>::iterator id_it = sdreq_id.begin();
+		for (; id_it != sdreq_id.end(); ++id_it) {
+			requestServiceCancel(*id_it);
+		}
 
 		/** Testing SupplicantHandle::msgDecompose(*char)
 		 * 	Method needs to be in SupplicantHandle's public section,

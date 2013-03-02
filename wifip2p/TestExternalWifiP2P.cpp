@@ -19,7 +19,7 @@ public:
 
 	void peerFound(Peer peer) {
 		cout << "Yeah, a Peer " << peer.getName() << " is found!!" << endl;
-		//cout << "Yeah, a Peer is found!!" << endl;
+
 	}
 
 
