@@ -69,7 +69,6 @@ public:
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
-	string getStringFromHexTLV(string tlv);
 
 
 private:
@@ -88,7 +87,10 @@ private:
 	vector<string> msgDecompose(string buf, string tok);
 	vector<string> tokenize(string token, string data, size_t max) const;
 
+	string getStringFromHexTLV(string tlv);
 	short hexlookup(char c);
+
+	bool matchingService(string own, string foreign);
 
 
 };

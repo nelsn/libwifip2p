@@ -35,10 +35,12 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 
 //		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
 //		Peer p2("30:39:26:00:e9:9d", "Android_9cd");
+		Peer p3("00:0c:42:6c:a6:e8", "dell_latitude");
 
 		list<Peer> peers;
 //		peers.push_back(p1);
 //		peers.push_back(p2);
+		peers.push_back(p3);
 
 		list<Connection> connections;
 
@@ -68,12 +70,12 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
 		}
 
-		list<Peer>::iterator it = peers.begin();
-		for (; it != peers.end(); ++it) {
-			if (it->getName() != "")
-				this->connectToPeer(*it);
-			cout << "Peer: " << it->getMacAddr() << "_" << it->getName() << endl;
-		}
+//		list<Peer>::iterator it = peers.begin();
+//		for (; it != peers.end(); ++it) {
+//			if (it->getName() != "")
+//				this->connectToPeer(*it);
+//			cout << "Peer: " << it->getMacAddr() << "_" << it->getName() << endl;
+//		}
 
 		for (int i=10000000; i!=0; i--) {
 			this->listen(peers, connections, services, sdreq_id, ext_if_dummy);
@@ -102,6 +104,15 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 			cout << *it << endl;
 		}
 		// Testing SupplicantHandle::msgDecompose(*char) */
+
+		list<Connection>::iterator conn_it = connections.begin();
+
+		for (; conn_it != connections.end(); ++conn_it) {
+			cout << "Connection: " << conn_it->getNetworkIntf().getName()
+					<< " with Peer " << conn_it->getPeer().getMacAddr()
+					<< "; " << conn_it->getPeer().getName() << endl;
+			disconnect(*conn_it);
+		}
 
 
 		this->findPeersStop();
