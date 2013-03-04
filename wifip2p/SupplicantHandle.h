@@ -14,7 +14,6 @@
 #include <string>
 
 #include <iostream>
-#include <sys/time.h> //FD_SET and functions...
 
 #include "wifip2p/Peer.h"
 #include "wifip2p/Connection.h"

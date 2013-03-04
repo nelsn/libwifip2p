@@ -370,7 +370,7 @@ namespace wifip2p {
 				 * A client-peer connected to a P2P GO triggers this event
 				 *  at the GO wpa_s by removing its respective virtual
 				 *  interface.
-				 *  Such an event needs to intercepted and in turn used
+				 *  Such an event needs to be intercepted and in turn used
 				 *  to search for the respective connection from within the
 				 *  connections list and then remove the respective's
 				 *  group virtual interface as well as reporting the connection

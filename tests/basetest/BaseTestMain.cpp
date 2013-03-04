@@ -2,6 +2,7 @@
 #include "wifip2p/SupplicantHandle.h"
 #include "wifip2p/TestSupplicantHandle.h"
 #include "wifip2p/Peer.h"
+#include "wifip2p/Timer.h"
 
 #include <list>
 
@@ -28,6 +29,37 @@ int main() {
 
 	try {
 
+//		wifip2p::Timer my_time;
+//
+//		if (!my_time.isRunning()) {
+//			my_time.setTimer(0, 20);
+//			while (!my_time.timeout()) {
+//				;
+//			}
+//		}
+//
+//		time_t point_a;
+//		point_a = time(NULL);
+//
+//		time_t point_b;
+////		point_b = time(NULL) + 20;
+//
+//		point_b = localtime(&point_a);
+//
+////		ptm = gmtime ( &rawtime );
+////		return mktime(ptm);
+//
+//		cout << point_a << endl;
+//		cout << point_b << endl;
+//		cout << difftime(point_a, point_b) << endl;
+//		cout << difftime(point_b, point_a) << endl;
+//
+//		for (int i=400; i!=0; --i)
+//			cout << i << endl;
+
+
+
+
 		//wifip2p::CoreEngine ce("/var/run/wpa_supplicant/wlan1", "dell_studio");
 
 		list<string> s;
@@ -40,7 +72,7 @@ int main() {
 		wifip2p::TestSupplicantHandle supp_mon(true);
 
 		//true for SupplicantHandle testing
-		if (true) {
+		if (false) {
 			supp_cmd.functionsTest("/var/run/wpa_supplicant/wlan1");
 			supp_mon.functionsTest("/var/run/wpa_supplicant/wlan1");
 		}

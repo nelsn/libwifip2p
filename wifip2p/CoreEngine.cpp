@@ -18,7 +18,7 @@ CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if)
 		  ext_if(ext_if),
 		  name(name),
 		  ctrl_path(ctrl_path),
-		  timer(0, 0) {
+		  timer() {
 
 }
 
