@@ -6,6 +6,8 @@
  */
 
 #include "wifip2p/CoreEngine.h"
+#include <sys/socket.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -20,10 +22,18 @@ CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if)
 		  ctrl_path(ctrl_path),
 		  timer() {
 
+	::pipe(pipe_fds);
 }
 
 CoreEngine::~CoreEngine() {
-	// TODO Auto-generated destructor stub
+	::close(pipe_fds[0]);
+	::close(pipe_fds[1]);
+}
+
+void CoreEngine::stop() {
+	running = false;
+	char buf[1] = { '\0' };
+	::write(pipe_fds[1], buf, 1);
 }
 
 /* Methods/Member functions >>
@@ -34,6 +44,20 @@ void CoreEngine::run() {
 	wpamon.open(this->ctrl_path.c_str());
 	wpasup.init(this->name, this->services);
 
+	fd_set fds;
+	int wpa_fd = wpamon.getFD();
+
+	FD_ZERO(&fds);
+	FD_SET(wpa_fd, &fds);
+	FD_SET(pipe_fds[0], &fds);
+
+	int high_fd = wpa_fd;
+
+	struct timeval tv;
+
+	tv.tv_sec = 2;
+	tv.tv_usec = 0;
+
 	bool running = true;
 
 	while (running) {
@@ -42,17 +66,19 @@ void CoreEngine::run() {
 
 		case ST_IDLE: {
 
-			do {
+			if (high_fd < pipe_fds[0]) {
+				high_fd = pipe_fds[0];
+			}
 
-				if (!timer.isRunning())
-					timer.setTimer(2, 0);
+			int res = ::select(high_fd + 1, &fds, NULL, NULL, &tv);
 
+			if (FD_ISSET(wpa_fd, &fds)) {
 				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
+			}
 
-			} while(!timer.timeout());
-
-			actual_state = ST_SCAN;
-
+			if (res == 0) {
+				actual_state = ST_SCAN;
+			}
 			break;
 		}
 
