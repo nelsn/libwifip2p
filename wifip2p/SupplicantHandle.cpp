@@ -86,13 +86,15 @@ namespace wifip2p {
 	}
 
 	/**
-	 * Initializes wpa_s beyond *_handle, i.e. sets the respective device name
-	 * 	through cfg/mac80211, flushes all yet registered services, adds all services
-	 * 	as handed over with list<string> services.
+	 * Initializes wpa_s beyond *_handle, i.e. sets the respective device
+	 * 	name through cfg/mac80211, flushes all yet registered services and
+	 * 	adds all services as handed over with list<string> services.
 	 *
-	 * @name: 	  The hardware interface's name, as to be set by wpa_s.
-	 * @services: The services, as to be registered at wpa_s for being able to
-	 * 			   respond, in case of any regarding requests.
+	 * @name: 	  The device name, as to be set by wpa_s in the interface's
+	 * 			   softMAC.
+	 * @services: The services, as to be registered at wpa_s for being
+	 * 			   able to respond, in case of any regarding requests.
+	 *
 	 */
 	void SupplicantHandle::init(string name, list<string> services) throw (SupplicantHandleException) {
 
@@ -140,13 +142,32 @@ namespace wifip2p {
 		return false;
 	}
 
+	/**
+	 * Registers a service at the local wpa_s. By convention, this library
+	 * 	is dealing with upnp as service discovery protocol with version tag
+	 * 	equal to 10. The official upnp service-device-naming scheme is not
+	 * 	used!
+	 * The naming conventions for a registered service are
+	 *
+	 * 		<SERVICE_NAME>$<DEVICE_NAME>
+	 *
+	 * 	which may result e.g. in
+	 *
+	 * 		IBRDTN$SomeDTNNodesEID
+	 *
+	 * 	as a registered service at the local wpa_s.
+	 *
+	 * @name:	 The local stations device name.
+	 * @service: The name of the to be registered service.
+	 * Returns:	 true, if the service may be successfully registered.
+	 *
+	 */
 	bool SupplicantHandle::addService(string name, string service) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_SERVICE_ADD "
 								+ SERVDISC_TYPE + " "
 								+ SERVDISC_VERS + " "
-								+ "name:" + name + "::"
-								+ "service:" + service,	NULL);
+								+ service + "$" + name,	NULL);
 			return true;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
@@ -155,12 +176,31 @@ namespace wifip2p {
 	}
 
 	/**
-	 * Initiates P2P_FIND command at wpa_s. Escalates exception on failure.
+	 * Initiates P2P_FIND command at wpa_s, i.e. it will set the hardware
+	 * 	network interface into listen_state. Thus, the interface will send
+	 * 	probe_request management frames and listen actively for on air
+	 * 	probe_responses and other STAs management frames in general.
+	 * On failure, escalates an exception.
 	 *
 	 */
 	void SupplicantHandle::findPeers() throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_FIND", NULL);
+		} catch (SupplicantHandleException &ex) {
+			throw SupplicantHandleException(ex.what());
+		}
+	}
+
+	/**
+	 * Initiates P2P_FIND command at wpa_s for the time as specified by the
+	 * 	respective value.
+	 *
+	 * @seconds: Time in seconds wpa_s will reside in its listen state.
+	 *
+	 */
+	void SupplicantHandle::findPeers(int seconds) throw (SupplicantHandleException) {
+		try {
+			this->p2pCommand("P2P_FIND " + seconds, NULL);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -202,7 +242,7 @@ namespace wifip2p {
 	 *
 	 */
 	void SupplicantHandle::listen(list<Peer> &peers, list<Connection> &connections,
-			list<string> &services, list<string> &sdreq_id,
+			list<string> &services, set<string> &sdreq_id,
 			WifiP2PInterface &ext_if) throw (SupplicantHandleException) {
 
 		if (this->monitor_mode) {
@@ -249,10 +289,10 @@ namespace wifip2p {
 					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
 
 					if (peer_it == peers.end()) {
-					    peers.push_back(p);
-					    cout << "Peer pushed back at peers, as yet not contained" << endl;
+						peers.push_back(p);
+						cout << "Peer pushed back at peers, as yet not contained" << endl;
 					} else {
-						//Check: p in list? => peer_it ~ p in list
+						//Check: p in list? Then peer_it ~ p in list
 					    if (peer_it->getName() != "") {
 					        /* If peer_it has name other than ""
 					         * 	=> peer_it is already fully_discovered
@@ -261,27 +301,7 @@ namespace wifip2p {
 					         */
 					    	cout << "call back ext_if with fully discovered peer" << endl;
 					        ext_if.peerFound(*peer_it);
-					        this->connectToPeer(*peer_it);
-					    } else {
-					    	//
-					    	//TODO [!!!!]
-					    	//
-					    	// NUR ZUM TEST!!!!
-					    	// DIESEN BLOCK DANN AUSLAGERN IN DIE CORE_ENGINE!
-					    	// Dort sollen alle lokal registrierten Services per broadcast
-					    	//	an all Peers gehen.
-					    	// Der Request wie in diesem Block ist nötig für eingehende
-					    	//	service_requests, sofern der anfragende Peer nicht bereits
-					    	//	fully_discovered (~ bekannt) ist.
-					    	//
-					    	/* peer_it is not fully_discovered yet
-					    	 * 	=> start service_discovery@peer_it
-					    	 */
-					    	cout << "peer not fully discovered. request services" << endl;
-					    	requestService(*peer_it, "IBRDTN", sdreq_id);
-//					    	list<string>::iterator it = services.begin();
-//					    	for (; it != services.end(); ++it)
-//					    		requestService(*peer_it, *it, &sdreq_id);
+					        //this->connectToPeer(*peer_it);
 					    }
 					}
 
@@ -305,7 +325,7 @@ namespace wifip2p {
 					if (msg.at(2) == "GO") {
 						NetworkIntf go_nic(msg.at(1));
 						Connection new_conn(go_nic);
-						//requires listening for AP_STA_CONNECTED event
+						//requires now listening for AP_STA_CONNECTED event
 						connections.push_front(new_conn);
 					} else {
 						//local device is supposed being group client >>
@@ -369,7 +389,7 @@ namespace wifip2p {
 				 *
 				 * A client-peer connected to a P2P GO triggers this event
 				 *  at the GO wpa_s by removing its respective virtual
-				 *  interface.
+				 *  interface, thus disconnecting.
 				 *  Such an event needs to be intercepted and in turn used
 				 *  to search for the respective connection from within the
 				 *  connections list and then remove the respective's
@@ -387,12 +407,41 @@ namespace wifip2p {
 
 					for (; it != connections.end(); ++it) {
 						if (it->getPeer().getMacAddr() == mac_lost) {
-							disconnect((*it));
-							ext_if.connectionLost(*it);
+							disconnect(*it);
+							Connection conn = *it;
+							it = connections.erase(it);
+							ext_if.connectionLost(conn);
 						}
 					}
 
 					cout << "[AP_STA_DISCONNECTED] << EVENT" << endl;
+				}
+
+				/* EVENT >> [GROUP_REMOVED]
+				 *
+				 * This event is triggered when a virtual (group) interface
+				 * 	is removed due to several reasons. E.g. if the connection
+				 * 	on that i/f is timed out, requested by GO and so on.
+				 *
+				 */
+				if (msg.at(0) == P2P_EVENT_GROUP_REMOVED) {
+
+					cout << "EVENT >> [GROUP_REMOVED]" << endl;
+
+					list<Connection>::iterator it = connections.begin();
+
+					for (; it != connections.end(); ++it) {
+						if (it->getNetworkIntf().getName() == msg.at(1)) {
+							disconnect(*it);
+							Connection conn = *it;
+							it = connections.erase(it);
+							ext_if.connectionLost(conn);
+						}
+
+					}
+
+
+					cout << "[GROUP_REMOVED] << EVENT" << endl;
 				}
 
 				/* EVENT >> [GROUP_NEG_REQUEST]
@@ -598,14 +647,14 @@ namespace wifip2p {
 							}
 						}
 					//empty service response received >>
-					} else {
-						list<Peer>::iterator it = peers.begin();
-						for (; it != peers.end(); ++it) {
-							if (it->getMacAddr() == msg.at(1)) {
-								it = peers.erase(it);
-							}
-						}
-					}
+					} //else {
+//						list<Peer>::iterator it = peers.begin();
+//						for (; it != peers.end(); ++it) {
+//							if (it->getMacAddr() == msg.at(1)) {
+//								it = peers.erase(it);
+//							}
+//						}
+//					}
 
 					cout << "[RECEIVED_SERVICE_RESPONSE] << EVENT" << endl;
 				}
@@ -623,14 +672,14 @@ namespace wifip2p {
 	 * @service   The string to be requested for; according to upnp the this
 	 * 			   string represents the ST-Field (Search_Target) of its
 	 * 			   respective M-SEARCH request.
-	 * @*sdreq_id Pointer enabling ::requestService() to call back a list<string>
-	 * 			   and ::push_back() the wpa_s' returned service_request_id.
+	 * @*sdreq_id Pointer enabling ::requestService() to call back a set<string>
+	 * 			   and ::insert() the wpa_s' returned service_request_id.
 	 * 			   This id is later needed by wpa_s to cancel the request. If not
 	 * 			   canceled, the request will be broadcast potentially for ever
 	 * 			   -- though no more considered (and replied) by peers, which were
-	 * 			   able to handle it properly; others would be penetrated.
+	 * 			   able to handle it properly; others may be penetrated.
 	 */
-	void SupplicantHandle::requestService(string service, list<string> &sdreq_id)
+	void SupplicantHandle::requestService(string service, set<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
 			string returned_id;
@@ -639,7 +688,7 @@ namespace wifip2p {
 					+ SERVDISC_TYPE + " "
 					+ SERVDISC_VERS + " "
 					+ service, &returned_id);
-			sdreq_id.push_back(returned_id);
+			sdreq_id.insert(returned_id);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -663,7 +712,7 @@ namespace wifip2p {
 	 * 				service later.
 	 *
 	 */
-	void SupplicantHandle::requestService(Peer peer, string service, list<string> &sdreq_id)
+	void SupplicantHandle::requestService(Peer peer, string service, set<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
 			string returned_id;
@@ -672,7 +721,7 @@ namespace wifip2p {
 					+ SERVDISC_TYPE + " "
 					+ SERVDISC_VERS + " "
 					+ service, &returned_id);
-			sdreq_id.push_back(returned_id);
+			sdreq_id.insert(returned_id);
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -687,7 +736,7 @@ namespace wifip2p {
 	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
 		try {
 			//string *fb;
-			cout << "ServiceRquest_ID : " << sdreq_id << endl;
+			//cout << "ServiceRquest_ID : " << sdreq_id << endl;
 			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, NULL);
 			//cout << "reqServCancel feedback : " << &fb << endl;
 		} catch (SupplicantHandleException &ex) {
@@ -860,7 +909,6 @@ namespace wifip2p {
 		return l;
 	}
 
-
 	/**
 	 * Converts hexadecimal input data to its proper ASCII coded
 	 * 	string representation.
@@ -920,6 +968,21 @@ namespace wifip2p {
 			return true;
 		else
 			return false;
+	}
+
+	/**
+	 * Enables to get the file descriptor which may help in reporting whether
+	 * 	event messages are locally available or not.
+	 * 	The respective wpa_s is required to be in monitor_mode.
+	 *
+	 * Returns: Actual wpa_s file descriptor, i.e. the respective integer.
+	 *
+	 */
+	int SupplicantHandle::getFD() const throw (SupplicantHandleException) {
+		if (monitor_mode)
+			return wpa_ctrl_get_fd((struct wpa_ctrl*) (_handle));
+		else
+			throw SupplicantHandleException("Unable to get file descriptor. wpa_s not in monitor mode.");
 	}
 
 	/**

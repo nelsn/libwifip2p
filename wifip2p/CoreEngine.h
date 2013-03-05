@@ -9,6 +9,7 @@
 #define COREENGINE_H_
 
 #include <list>
+#include <set>
 #include <string>
 
 #include "wifip2p/SupplicantHandle.h"
@@ -42,23 +43,16 @@ private:
 class CoreEngine {
 
 public:
-	/* Constructors, destructors >>
-	 *
-	 */
 	CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if);
 	virtual ~CoreEngine();
 
-	/* Member variables >>
-	 *
-	 */
+
 	SupplicantHandle wpasup;
 	SupplicantHandle wpamon;
 
 
-	/* Methods/Member functions >>
-	 *
-	 */
-	void run(); //really void? Or int:={-1=err, 0=okay}
+	void run();
+	void stop();
 
 	void connect(Peer peer);
 
@@ -70,16 +64,12 @@ public:
 
 	void reinitialize(string ctrl_path, list<string> services) throw (CoreEngineException);
 
-	bool addService(string service);
-	bool addService(list<string> services);
-
+	void addService(string service);
+	void addService(list<string> services);
 
 	string getName();
 
 
-	/* Enumeration definitions >>
-	 *
-	 */
 	enum state { ST_IDLE,
 				 ST_SCAN,
 				 ST_SREQ,
@@ -87,27 +77,25 @@ public:
 
 
 private:
-	/* Member variables >>
-	 *
-	 */
 	string ctrl_path;
 	string name;
 	list<string> services;
-	list<string> sdreq_id;
+	set<string> sdreq_id;
+
+	state actual_state;
+	bool running;
+
+	int pipe_fds[2];
 
 	list<Peer> peers;
 	list<Connection> connections;
 
 	WifiP2PInterface &ext_if;
 
-	state actual_state;
-	Timer timer;
 
-
-	/* Methods/Member functions >>
-	 *
-	 */
 	void initialize() throw (CoreEngineException);
+
+	bool triggeredEvents(const SupplicantHandle &wpa, int seconds, state next);
 
 };
 

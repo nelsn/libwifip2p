@@ -72,7 +72,7 @@ int main() {
 		wifip2p::TestSupplicantHandle supp_mon(true);
 
 		//true for SupplicantHandle testing
-		if (false) {
+		if (true) {
 			supp_cmd.functionsTest("/var/run/wpa_supplicant/wlan1");
 			supp_mon.functionsTest("/var/run/wpa_supplicant/wlan1");
 		}

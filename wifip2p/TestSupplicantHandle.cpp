@@ -31,7 +31,7 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 		//services.push_back("Whatever");
 		this->init("DevName", services);
 
-		list<string> sdreq_id;
+		set<string> sdreq_id;
 
 //		Peer p1("aa:bb:cc:dd:ee:ff", "PeersName");
 //		Peer p2("30:39:26:00:e9:9d", "Android_9cd");
@@ -84,10 +84,11 @@ void TestSupplicantHandle::functionsTest(const char *ctrl_path) {
 
 		cout << "# of sd_req's on air:  " << sdreq_id.size() << endl;
 
-		list<string>::iterator id_it = sdreq_id.begin();
+		set<string>::iterator id_it = sdreq_id.begin();
 		for (; id_it != sdreq_id.end(); ++id_it) {
 			requestServiceCancel(*id_it);
 		}
+		sdreq_id.clear();
 
 		/** Testing SupplicantHandle::msgDecompose(*char)
 		 * 	Method needs to be in SupplicantHandle's public section,

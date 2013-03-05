@@ -25,20 +25,6 @@ Peer::Peer(string mac, string name)
 	: mac_addr(mac),
 	  name(name) {
 
-	/*
-	 * Yet taken out, because this address validating is not
-	 * 	necessarily needed.
-	 * 	The address gets assigned, but not by calling the
-	 * 	specifically defined private method.
-	 *
-	 * 	TODO (Either fixing and making this process work or deleting it.)
-	 *
-	 *	if (!this->setMacAddr(mac))
-	 *		throw PeerException("No valid MAC address. Note: "
-	 *				"A valid MAC address is a 48bit hexdump with "
-	 *				"every two byte pairs separated by a colon.");
-	 *
-	 */
 }
 
 Peer::~Peer() {
@@ -56,10 +42,7 @@ Peer::~Peer() {
  *
  */
 bool Peer::operator==(const Peer &peer) const {
-	if (this->mac_addr == peer.mac_addr)
-		return true;
-	else
-		return false;
+	return this->mac_addr == peer.mac_addr;
 }
 
 string Peer::getMacAddr() const {

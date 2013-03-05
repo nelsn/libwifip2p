@@ -10,6 +10,7 @@
 #define SUPPLICANTHANDLE_H_
 
 #include <list>
+#include <set>
 #include <vector>
 #include <string>
 
@@ -52,21 +53,24 @@ public:
 
 
 	void findPeers() throw (SupplicantHandleException);
+	void findPeers(int seconds) throw (SupplicantHandleException);
 	void findPeersStop() throw (SupplicantHandleException);
 	void listen(list<Peer> &peers,
 			list<Connection> &connections,
 			list<string> &services,
-			list<string> &sdreq_id,
+			set<string> &sdreq_id,
 			WifiP2PInterface &ext_if) throw (SupplicantHandleException);
 
-	void requestService(string service, list<string> &sdreq_id)
+	void requestService(string service, set<string> &sdreq_id)
 			throw (SupplicantHandleException);
-	void requestService(Peer peer, string service, list<string> &sdreq_id)
+	void requestService(Peer peer, string service, set<string> &sdreq_id)
 			throw (SupplicantHandleException);
 	void requestServiceCancel(string sdreq_id) throw (SupplicantHandleException);
 
 	void connectToPeer(Peer peer) throw (SupplicantHandleException);
 	void disconnect(Connection conn) throw (SupplicantHandleException);
+
+	int getFD() const throw (SupplicantHandleException);
 
 
 
