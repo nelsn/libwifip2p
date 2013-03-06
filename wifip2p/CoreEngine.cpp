@@ -13,6 +13,21 @@ using namespace std;
 
 namespace wifip2p {
 
+/**
+ * Constructs a CoreEngine object initializing all variables to proper values.
+ * 	The state timer are initialized to (10, 10, 20) seconds for (st_idle,
+ * 	st_scan, st_sreq). Each of the time values may be changed independently
+ * 	of the others by using the respective setter method.
+ *
+ * @ctrl_path: string representing the path to the wpa_s ctrl_i/f domain socket.
+ * @name:	   The string representation of this devices name. This one  will
+ * 				be used to register services accordingly to the general naming
+ * 				conventions at the wpa_s. Furthermore this name will be set at the
+ * 				devices SoftMAC, if the driver allows for.
+ * @&ext_if:   Reference to the external interface implementation used for call
+ * 				backs from SupplicantHandle objects.
+ *
+ */
 CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if)
 		: wpasup(false),
 		  wpamon(true),
@@ -33,16 +48,21 @@ CoreEngine::~CoreEngine() {
 	::close(pipe_fds[1]);
 }
 
-/* Methods/Member functions >>
+/**
+ * Stops a running CoreEngine.
  *
  */
-
 void CoreEngine::stop() {
 	running = false;
 	char buf[1] = { '\0' };
 	::write(pipe_fds[1], buf, 1);
 }
 
+/**
+ * Makes a CoreEngine setting up all SupplicantHandle connections, initializing
+ *  and running in the state machine's loop.
+ *
+ */
 void CoreEngine::run() {
 	wpasup.open(this->ctrl_path.c_str());
 	wpamon.open(this->ctrl_path.c_str());
@@ -108,16 +128,16 @@ void CoreEngine::run() {
 			sdreq_id.clear();
 			wpasup.findPeersStop();
 
-			//TODO Abfrage wahrscheinlich hinfällig --> immer direkt in ST_IDLE
-
-			if (!connections.empty()) {
-				//actual_state = ST_CONN;
+//			//TODO Abfrage wahrscheinlich hinfällig --> immer direkt in ST_IDLE
+//
+//			if (!connections.empty()) {
+//				//actual_state = ST_CONN;
 				actual_state = ST_IDLE;
-			} else {
-				if (peers.empty()) {
-					actual_state = ST_SCAN;
-				}
-			}
+//			} else {
+//				if (peers.empty()) {
+//					actual_state = ST_SCAN;
+//				}
+//			}
 
 			break;
 		}
@@ -131,10 +151,7 @@ void CoreEngine::run() {
 }
 
 /**
- * Enables to connect to a specifically known peer. After calling the respective
- * 	method at wpasup, a state change is needed. If the connection my not be
- * 	established, for whatever reason, the connections-list may be evaluated to
- * 	empty and in turn another state change will take place.
+ * Enables to connect to a specifically known peer.
  *
  * @peer: The Peer object to connect to.
  *
@@ -142,8 +159,6 @@ void CoreEngine::run() {
 void CoreEngine::connect(wifip2p::Peer peer) {
 
 	wpasup.connectToPeer(peer);
-
-	actual_state = ST_CONN;
 
 }
 
@@ -222,6 +237,19 @@ void CoreEngine::reinitialize(string ctrl_path, list<string> services) throw (Co
 	}
 }
 
+/**
+ * This method observes a fixed set of file descriptors per blocking ::select
+ * 	in order to catch event messages created at wpa_s and escalated to the
+ * 	respectively attached SupplicantHandle.
+ * 	The method will remain in ::select for a to be defined number of seconds.
+ *
+ * @&wpa:	 Reference to the SupplicantHandle whichs wpa_s control_i/f connection
+ * 			  file descriptor will be monitored by blocking ::select for incoming
+ * 			  event messages.
+ * @seconds: Time value for how long the method will remain in blocking ::select.
+ * @next:	 The next CoreEngine state to be entered after leaving ::select.
+ *
+ */
 bool CoreEngine::triggeredEvents(const SupplicantHandle &wpa, int seconds, state next) {
 
 	fd_set fds;
@@ -289,9 +317,6 @@ void CoreEngine::addService(string service) {
 	this->services.push_back(service);
 }
 
-void CoreEngine::addService(list<string> services) {
-	;
-}
 
 
 } /* namespace wifip2p */

@@ -63,7 +63,6 @@ public:
 	void reinitialize(string ctrl_path, list<string> services) throw (CoreEngineException);
 
 	void addService(string service);
-	void addService(list<string> services);
 
 	void setName(string name);
 	const string getName() const;
