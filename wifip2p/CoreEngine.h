@@ -60,14 +60,20 @@ public:
 	void disconnect(NetworkIntf nic);
 	void disconnect(Peer peer);
 
-	void setName(string name);
-
 	void reinitialize(string ctrl_path, list<string> services) throw (CoreEngineException);
 
 	void addService(string service);
 	void addService(list<string> services);
 
-	string getName();
+	void setName(string name);
+	const string getName() const;
+
+	void setTime_ST_IDLE(int s);
+	const int getTime_ST_IDLE() const;
+	void setTime_ST_SCAN(int s);
+	const int getTime_ST_SCAN() const;
+	void setTime_ST_SREQ(int s);
+	const int getTime_ST_SREQ() const;
 
 
 	enum state { ST_IDLE,
@@ -83,6 +89,10 @@ private:
 	set<string> sdreq_id;
 
 	state actual_state;
+	int st_idle_time,
+		st_scan_time,
+		st_sreq_time;
+
 	bool running;
 
 	int pipe_fds[2];

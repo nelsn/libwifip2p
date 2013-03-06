@@ -17,6 +17,9 @@ CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if)
 		: wpasup(false),
 		  wpamon(true),
 		  actual_state(ST_IDLE),
+		  st_idle_time(10),
+		  st_scan_time(10),
+		  st_sreq_time(20),
 		  running(false),
 		  ext_if(ext_if),
 		  name(name),
@@ -55,7 +58,7 @@ void CoreEngine::run() {
 
 			cout << "[ENTERED_STATE := IDLE_STATE]" << endl;
 
-			if (triggeredEvents(wpamon, 10, ST_SCAN)) {
+			if (triggeredEvents(wpamon, st_idle_time, ST_SCAN)) {
 				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
 			}
 
@@ -68,7 +71,7 @@ void CoreEngine::run() {
 
 			wpasup.findPeers();
 
-			if (triggeredEvents(wpamon, 10, ST_SCAN)) {
+			if (triggeredEvents(wpamon, st_scan_time, ST_SCAN)) {
 				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
 			}
 
@@ -93,11 +96,11 @@ void CoreEngine::run() {
 
 			wpasup.findPeers();
 
-			do {
+			while(triggeredEvents(wpamon, st_sreq_time, ST_SREQ)) {
 
 				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
 
-			} while(triggeredEvents(wpamon, 20, ST_SREQ));
+			}
 
 			set<string>::iterator jt = sdreq_id.begin();
 			for (; jt != sdreq_id.end(); ++jt)
@@ -105,30 +108,16 @@ void CoreEngine::run() {
 			sdreq_id.clear();
 			wpasup.findPeersStop();
 
+			//TODO Abfrage wahrscheinlich hinfällig --> immer direkt in ST_IDLE
+
 			if (!connections.empty()) {
-				actual_state = ST_CONN;
+				//actual_state = ST_CONN;
+				actual_state = ST_IDLE;
 			} else {
 				if (peers.empty()) {
 					actual_state = ST_SCAN;
 				}
 			}
-
-			break;
-		}
-
-		case ST_CONN: {
-
-			cout << "[ENTERED_STATE := CONNECTED_STATE]" << endl;
-
-			while (!connections.empty()) {
-
-				if (triggeredEvents(wpamon, 5, ST_CONN)) {
-					wpamon.listen(peers, connections, services, sdreq_id, ext_if);
-				}
-
-			}
-
-			actual_state = ST_IDLE;
 
 			break;
 		}
@@ -266,6 +255,34 @@ bool CoreEngine::triggeredEvents(const SupplicantHandle &wpa, int seconds, state
 void CoreEngine::setName(string name) {
 	this->name = name;
 	this->initialize();
+}
+
+const string CoreEngine::getName() const {
+	return this->name;
+}
+
+void CoreEngine::setTime_ST_IDLE(int s) {
+	this->st_idle_time = s;
+}
+
+const int CoreEngine::getTime_ST_IDLE() const {
+	return this->st_idle_time;
+}
+
+void CoreEngine::setTime_ST_SCAN(int s) {
+	this->st_scan_time = s;
+}
+
+const int CoreEngine::getTime_ST_SCAN() const {
+	return this->st_scan_time;
+}
+
+void CoreEngine::setTime_ST_SREQ(int s) {
+	this->st_sreq_time = s;
+}
+
+const int CoreEngine::getTime_ST_SREQ() const {
+	return this->st_sreq_time;
 }
 
 void CoreEngine::addService(string service) {
