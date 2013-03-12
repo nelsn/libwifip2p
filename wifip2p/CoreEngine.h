@@ -14,7 +14,6 @@
 
 #include "wifip2p/SupplicantHandle.h"
 #include "wifip2p/WifiP2PInterface.h"
-#include "wifip2p/Timer.h"
 #include "wifip2p/Connection.h"
 #include "wifip2p/Peer.h"
 #include "wifip2p/NetworkIntf.h"
