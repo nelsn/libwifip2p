@@ -77,8 +77,7 @@ public:
 
 	enum state { ST_IDLE,
 				 ST_SCAN,
-				 ST_SREQ,
-				 ST_CONN };
+				 ST_SREQ };
 
 
 private:
