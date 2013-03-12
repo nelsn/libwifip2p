@@ -106,16 +106,7 @@ void CoreEngine::run() {
 			sdreq_id.clear();
 			wpasup.findPeersStop();
 
-//			//TODO Abfrage wahrscheinlich hinfällig --> immer direkt in ST_IDLE
-//
-//			if (!connections.empty()) {
-//				//actual_state = ST_CONN;
-				actual_state = ST_IDLE;
-//			} else {
-//				if (peers.empty()) {
-//					actual_state = ST_SCAN;
-//				}
-//			}
+			actual_state = ST_IDLE;
 
 			break;
 		}
@@ -131,7 +122,12 @@ void CoreEngine::run() {
 
 void CoreEngine::connect(wifip2p::Peer peer) {
 
-	wpasup.connectToPeer(peer);
+//	try {
+		wpasup.connectToPeer(peer);
+//
+//	} catch (SupplicantHandleException &ex) {
+//
+//	}
 
 }
 

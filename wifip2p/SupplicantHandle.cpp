@@ -176,7 +176,7 @@ namespace wifip2p {
 
 					if (peer_it == peers.end()) {
 						peers.push_back(p);
-						cout << "Peer pushed back at peers, as yet not contained" << endl;
+//						cout << "Peer pushed back at peers, as yet not contained" << endl;
 					} else {
 						//Check: p in list? Then peer_it ~ p in list
 					    if (peer_it->getName() != "") {
@@ -348,7 +348,25 @@ namespace wifip2p {
 					if (peer_it != peers.end()) {
 						// peer is fully discovered >>
 						if (peer_it->getName() != "") {
-							ext_if.peerFound(*peer_it);
+
+							list<Connection>::iterator conn_it = connections.begin();
+							bool contained = false;
+
+							for (; conn_it != connections.end(); ++conn_it) {
+								if (conn_it->getPeer() == *peer_it) {
+									cout << "peer already connected" << endl;
+									contained = true;
+									break;
+								} else {
+									continue;
+								}
+							}
+
+							cout << "peer is in connections? " << contained << endl;
+							//peer is not already connected
+							if (!contained)
+								connectToPeer(*peer_it);
+
 						// hand over to ext_if for being checked externally >>
 						} else {
 							// TODO in case ext_if should be bothered
