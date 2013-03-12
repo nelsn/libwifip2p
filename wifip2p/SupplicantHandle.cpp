@@ -454,14 +454,16 @@ namespace wifip2p {
 					if (peer_it != peers.end()) {
 						// peer is fully discovered >>
 						if (peer_it->getName() != "") {
-							connectToPeer(*peer_it);
+							ext_if.peerFound(*peer_it);
 						// hand over to ext_if for being checked externally >>
 						} else {
-							ext_if.peerFound(*peer_it);
+							// TODO in case ext_if should be bothered
+							//ext_if.peerFound(*peer_it);
 						}
 					// hand over to ext_if for being checked externally >>
 					} else {
-						ext_if.peerFound(*peer_it);
+						// TODO in case ext_if should be bothered
+						// ext_if.peerFound(*peer_it);
 					}
 
 					//cout << "[GROUP_NEG_REQUEST] << EVENT" << endl;
