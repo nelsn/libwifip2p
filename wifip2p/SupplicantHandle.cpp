@@ -29,43 +29,12 @@ namespace wifip2p {
 
 	SupplicantHandle::~SupplicantHandle() {
 
-		/*
-		 * _handle is going to be dereferenced, i.e., the function
-		 *  wpa_ctrl_close gets handed over the actual control_i/f
-		 *  referenced by _handle.
-		 */
-		//if (monitor_mode)
-		//	if (wpa_ctrl_detach((struct wpa_ctrl*)_handle) < 0)
-		//		cerr << "Failed to detach monitor properly. Close will be forced." << endl;
-
 		if (_handle != NULL)
 			wpa_ctrl_close((struct wpa_ctrl*)_handle);
 
 	}
 
 
-	/*
-	 * Take a look at hostap/src/common/wpa_ctrl.{h|c} for what methods
-	 *  are actually provided. The needed maybe taken and used, by
-	 *  handing over the _handle variable.
-	 * The _handle variable represents the connection to the Linux
-	 *  internal application socket towards WPA_SUPPLICANT as opened
-	 *  through wpa_control_open(ctrl_path). Here, ctrl_path is the
-	 *  actual socket address in the Linux file system, e.g.
-	 *  /var/run/wpa_supplicant, which holds all the responsibility
-	 *  of de-/multiplexing those connections.
-	 */
-
-	/**
-	 * Tries to open a control connection to a running wpa_s control_i/f.
-	 *
-	 * @*ctrl_path: Here, _handle gets assigned, representing the now opened
-	 * 				 control_i/f of wpa_s as expected behind the *ctrl_path
-	 * 				 parameter.
-	 * 				 E.g. when wpa_s is bound to hardware interface wlan0,
-	 * 				 fully qualified *ctrl_path needs to match
-	 * 				 "/var/run/wpa_supplicant/wlan0"
-	 */
 	void SupplicantHandle::open(const char *ctrl_path) throw (SupplicantHandleException) {
 
 		_handle = wpa_ctrl_open(ctrl_path);
@@ -85,17 +54,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * Initializes wpa_s beyond *_handle, i.e. sets the respective device
-	 * 	name through cfg/mac80211, flushes all yet registered services and
-	 * 	adds all services as handed over with list<string> services.
-	 *
-	 * @name: 	  The device name, as to be set by wpa_s in the interface's
-	 * 			   softMAC.
-	 * @services: The services, as to be registered at wpa_s for being
-	 * 			   able to respond, in case of any regarding requests.
-	 *
-	 */
+
 	void SupplicantHandle::init(string name, list<string> services) throw (SupplicantHandleException) {
 
 		try {
@@ -114,14 +73,6 @@ namespace wifip2p {
 	}
 
 
-	/**
-	 * Method to set the device if actually allowed by the respective
-	 * 	hardware driver.
-	 *
-	 * @name: 	The name as to be set for the device, controlled by this wpa_s.
-	 * Returns: true, if device name is set; false, else.
-	 *
-	 */
 	bool SupplicantHandle::setDeviceName(string name) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("SET device_name " + name, NULL);
@@ -142,26 +93,7 @@ namespace wifip2p {
 		return false;
 	}
 
-	/**
-	 * Registers a service at the local wpa_s. By convention, this library
-	 * 	is dealing with upnp as service discovery protocol with version tag
-	 * 	equal to 10. The official upnp service-device-naming scheme is not
-	 * 	used!
-	 * The naming conventions for a registered service are
-	 *
-	 * 		<SERVICE_NAME>$<DEVICE_NAME>
-	 *
-	 * 	which may result e.g. in
-	 *
-	 * 		IBRDTN$SomeDTNNodesEID
-	 *
-	 * 	as a registered service at the local wpa_s.
-	 *
-	 * @name:	 The local stations device name.
-	 * @service: The name of the to be registered service.
-	 * Returns:	 true, if the service may be successfully registered.
-	 *
-	 */
+
 	bool SupplicantHandle::addService(string name, string service) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_SERVICE_ADD "
@@ -175,14 +107,7 @@ namespace wifip2p {
 		return false;
 	}
 
-	/**
-	 * Initiates P2P_FIND command at wpa_s, i.e. it will set the hardware
-	 * 	network interface into listen_state. Thus, the interface will send
-	 * 	probe_request management frames and listen actively for on air
-	 * 	probe_responses and other STAs management frames in general.
-	 * On failure, escalates an exception.
-	 *
-	 */
+
 	void SupplicantHandle::findPeers() throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_FIND", NULL);
@@ -191,13 +116,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * Initiates P2P_FIND command at wpa_s for the time as specified by the
-	 * 	respective value.
-	 *
-	 * @seconds: Time in seconds wpa_s will reside in its listen state.
-	 *
-	 */
+
 	void SupplicantHandle::findPeers(int seconds) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_FIND " + seconds, NULL);
@@ -206,10 +125,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * Stops P2P_FIND command at wpa_s.
-	 *
-	 */
+
 	void SupplicantHandle::findPeersStop() throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_STOP_FIND", NULL);
@@ -218,29 +134,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * This method requires some references as input-output parameters for being to
-	 * 	manage several call backs to some external data structures.
-	 * 	The method requires a control connection to wpa_s being set to monitor-mode.
-	 * 	If so, it listens non-blocking at the respective wpa_s for any event
-	 * 	message. Those are generally created unsolicited from the related command
-	 * 	call, as their generation fully depends on receiving the required response
-	 * 	frames on L2 and being processed by the local wpa_s.
-	 *
-	 * @&peers:		  Reference to a list<Peer> object for managing any found, i.e.
-	 * 				   especially any fully discovered peer.
-	 * @&connections: The reference to a list<Connection> object which is supposed to
-	 * 				   store and manage any established connection.
-	 * @&services:	  Reference to a list<string> which enables SupplicantHandle to
-	 * 				   know all locally available services.
-	 * @&sdreq_id:	  Reference to another list<string> which collects service request
-	 * 				   id's. Those id's are generated by wpa_s for any actually on air
-	 * 				   service request transmitted through ::requestService() and
-	 * 				   required for canceling each of it through ::requestServiceCancel().
-	 * @&ext_if:	  The reference to the actual call back interface needed to being
-	 * 				   implement for properly using the library.
-	 *
-	 */
+
 	void SupplicantHandle::listen(list<Peer> &peers, list<Connection> &connections,
 			list<string> &services, set<string> &sdreq_id,
 			WifiP2PInterface &ext_if) throw (SupplicantHandleException) {
@@ -625,25 +519,11 @@ namespace wifip2p {
 				}
 			}
 		} else {
-			// TODO is an exception really needed here?
 			throw SupplicantHandleException("SupplicantHandle needs to be in monitor mode for ::listen().");
 		}
 	}
 
-	/**
-	 * Initiates a upnp service request at wpa_s as fully broadcast, i.e. its
-	 * 	destination address is 00:00:00:00:00:00.
-	 *
-	 * @service   The string to be requested for; according to upnp the this
-	 * 			   string represents the ST-Field (Search_Target) of its
-	 * 			   respective M-SEARCH request.
-	 * @*sdreq_id Pointer enabling ::requestService() to call back a set<string>
-	 * 			   and ::insert() the wpa_s' returned service_request_id.
-	 * 			   This id is later needed by wpa_s to cancel the request. If not
-	 * 			   canceled, the request will be broadcast potentially for ever
-	 * 			   -- though no more considered (and replied) by peers, which were
-	 * 			   able to handle it properly; others may be penetrated.
-	 */
+
 	void SupplicantHandle::requestService(string service, set<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
@@ -659,24 +539,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * Requests a upnp service, at a specific destination peer.
-	 * This method is especially meant to request the destination peer's name,
-	 *  as registered per service.
-	 *  Furthermore, one will get a service response whether the service is
-	 *  registered at that peer's wpa_s or not.
-	 * The whole procedure turns a peer (only MAC known) into a 'fully discovered'
-	 * 	peer, with MAC and name known, in the case it holds the requested service.
-	 * 	The name must be derived from the destination peer's automatically
-	 * 	generated sd_response.
-	 *
-	 * @peer:	   The peer destined for the service request.
-	 * @service:   The service in request.
-	 * @*sdreq_id: Pointer at a list, where the per request corresponding
-	 * 				will be pushed at sdreq_id. Required to cancel any requested
-	 * 				service later.
-	 *
-	 */
+
 	void SupplicantHandle::requestService(Peer peer, string service, set<string> &sdreq_id)
 			throw (SupplicantHandleException) {
 		try {
@@ -692,12 +555,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * Cancels a pending service request, according to its id at wpa_s.
-	 *
-	 * @sdreq_id: The corresponding ID required to cancel a pending service request.
-	 *
-	 */
+
 	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
 		try {
 			//string *fb;
@@ -710,16 +568,6 @@ namespace wifip2p {
 	}
 
 
-
-	/**
-	 * Creates a peering between this local and wpa_s controlled WNIC and Peer
-	 *  peer. The method uses WPS Push Button Configuration (PBC). wpa_s will
-	 *  create a virtual WNIC per each connection which is going to be established.
-	 *  The virtual interface will be called "p2p-<HW-IF-name>-<#count>".
-	 *
-	 * @peer: The peer to which wpa_s should initiate a connection.
-	 *
-	 */
 	void SupplicantHandle::connectToPeer(Peer peer) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_CONNECT " + peer.getMacAddr() + " pbc", NULL);
@@ -728,16 +576,7 @@ namespace wifip2p {
 		}
 	}
 
-	/**
-	 * By now, this method only handles to remove wpa_s' created virtual WNICs,
-	 *  thus disconnecting both of a group's peers.
-	 * This is sufficient, as SupplicantHandle::connectToPeer(Peer) does not deal
-	 * 	with joining a P2P group, whether available, but just always creates
-	 * 	exactly one peering between each two devices in a separate group.
-	 *
-	 * @conn: The Connection which stores the interface to be removed.
-	 *
-	 */
+
 	void SupplicantHandle::disconnect(Connection conn) throw (SupplicantHandleException) {
 		try {
 			this->p2pCommand("P2P_GROUP_REMOVE " + conn.getNetworkIntf().getName(), NULL);
@@ -747,25 +586,6 @@ namespace wifip2p {
 	}
 
 
-
-	/**
-	 * Method to be used to parse a certain command through a connected ctrl_i/f
-	 *  connection to the respectively connected and running wpa_s.
-	 *
-	 * @cmd: 			  Command string, to be transmitted to wpa_s. See wpa_s
-	 * 					   documentation for possible commands.
-	 * 					  IT IS OF HIGHEST IMPORTANCE to handing over everything
-	 * 					   except the actual command - which is only the very
-	 * 					   first part of each such statement - and freely to be
-	 * 					   defined names - e.g. an actual device name - in all-lower
-	 * 					   case letters! Otherwise, wpa_s will fail executing
-	 * 					   the command.
-	 * @*direct_feedback: [optional; may be NULL]
-	 * 					  Pointer to a string object that will created immediately
-	 * 					   after calling a specific command at wpa_s.
-	 * Returns: 		  true or false, whether the command may be initiated
-	 * 					   successfully or not.
-	 */
 	bool SupplicantHandle::p2pCommand(string cmd, string *direct_feedback) throw (SupplicantHandleException) {
 
 		vector<char> reply_buf(64);
@@ -804,17 +624,6 @@ namespace wifip2p {
 	}
 
 
-	/**
-	 * Decomposed the wpa_s message into an array of strings, with
-	 * 	each array element representing one of the message's values.
-	 * 	The first value within the returned string array represents
-	 * 	the event type while the following depend on that type.
-	 *
-	 * @buffer: string awaited, representing the service response's
-	 * 			 TLV data.
-	 * @tok	  : string token by which to separate the input buffer.
-	 * Returns: vector<string> of the separated buffer parts.
-	 */
 	vector<string> SupplicantHandle::msgDecompose(string buffer, string tok) {
 
 		//string buffer(buf+3);
@@ -823,16 +632,7 @@ namespace wifip2p {
 		return ret;
 	}
 
-	/**
-	 * Method created by Johannes Morgenroth in the context of the
-	 * 	IBR common library.
-	 * Divides a string into several substrings by a given delimiter.
-	 *
-	 * @token:  The delimiter searched for between each two characters.
-	 * @data:	The to be divided original string.
-	 * @max:	Maximum number of parts to divide string into.
-	 * Returns:	The up divided original string as a vector<string>.
-	 */
+
 	vector<string> SupplicantHandle::tokenize(string token, string data, size_t max) const
 	{
 		vector<string> l;
@@ -874,20 +674,7 @@ namespace wifip2p {
 		return l;
 	}
 
-	/**
-	 * Converts hexadecimal input data to its proper ASCII coded
-	 * 	string representation.
-	 * Needs helper function SupplicantHandle::hexlookup().
-	 *
-	 * @string: The TLV received from a service discovery response.
-	 * 			 That is only response frame's data, not its header.
-	 * 			 Independently of wpa_s' specification, this method
-	 * 			 may actually only deal with service entries at
-	 * 			 opposite stations, which do not overflow the total
-	 * 			 size of 65535 Byte, which equals FFFF as length.
-	 * Return:	A string representation of the TLV input data.
-	 *
-	 */
+
 	string SupplicantHandle::getStringFromHexTLV(string tlv) {
 
 //		cout << "TLV  : " << tlv << endl;
@@ -919,15 +706,7 @@ namespace wifip2p {
 		return result;
 	}
 
-	/**
-	 * Sets SupplicantHandle in monitor mode by attaching it to wpa_s' domain
-	 * 	socket.
-	 * Initializes the attached domain sockets FileDescriptor as returned by
-	 * 	the proper wpa_s control_i/f's function.
-	 *
-	 * Returns: true, if the monitor may be set. false, otherwise.
-	 *
-	 */
+
 	bool SupplicantHandle::setMonitorMode() throw (SupplicantHandleException) {
 		if (wpa_ctrl_attach((struct wpa_ctrl*) (_handle)) == 0)
 			return true;
@@ -935,14 +714,7 @@ namespace wifip2p {
 			return false;
 	}
 
-	/**
-	 * Enables to get the file descriptor which may help in reporting whether
-	 * 	event messages are locally available or not.
-	 * 	The respective wpa_s is required to be in monitor_mode.
-	 *
-	 * Returns: Actual wpa_s file descriptor, i.e. the respective integer.
-	 *
-	 */
+
 	int SupplicantHandle::getFD() const throw (SupplicantHandleException) {
 		if (monitor_mode)
 			return wpa_ctrl_get_fd((struct wpa_ctrl*) (_handle));
@@ -950,14 +722,7 @@ namespace wifip2p {
 			throw SupplicantHandleException("Unable to get file descriptor. wpa_s not in monitor mode.");
 	}
 
-	/**
-	 * Checks whether a string is contained within another or not.
-	 *
-	 * @own:	 string representing locally registered service.
-	 * @foreign: externally requested service as string representation.
-	 * Returns:	 true, whether foreign is contained within own or not.
-	 *
-	 */
+
 	bool SupplicantHandle::matchingService(string own, string foreign) {
 
 		if (own.size() < foreign.size() || foreign.size() == 0) {
@@ -985,14 +750,7 @@ namespace wifip2p {
 		return false;
 	}
 
-	/**
-	 * Table lookup returning a short (decimal representation)
-	 * 	accordingly to the input character (hex representation).
-	 *
-	 * @c:	   hex input character [0-9,a-f]
-	 * Return: decimal equivalent [0-15]
-	 *
-	 */
+
 	short SupplicantHandle::hexlookup(char c) {
 		short ret;
 		switch (c) {

@@ -45,14 +45,20 @@ public:
 	string getName() const;
 	void setName(string name);
 
+	/**
+	 * Matches the actual peer against the input parameter peer.
+	 * Equality is explicitly defined as matching MAC addresses; as
+	 *  a peer's name is not of any use regarding this issue.
+	 *
+	 * @peer:  peer to be checked for equality.
+	 * Return: true or false, whether this = peer.
+	 *
+	 */
 	bool operator==(const Peer &peer) const;
 
 private:
 	string mac_addr;
 	string name;
-
-	bool setMacAddr(string mac);
-	bool validMacAddr(string mac);
 
 };
 

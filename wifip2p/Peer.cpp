@@ -6,6 +6,7 @@
  */
 
 #include "wifip2p/Peer.h"
+//TODO include may probably be removed from here.
 #include <algorithm>
 
 using namespace std;
@@ -28,86 +29,28 @@ Peer::Peer(string mac, string name)
 }
 
 Peer::~Peer() {
-	// TODO Auto-generated destructor stub
 
 }
 
-/**
- * Matches the actual peer against the input parameter peer.
- * Equality is explicitly defined as matching MAC addresses, as
- *  a peer's name is not of any use regarding this issue.
- *
- * @peer:  peer to be checked for equality.
- * Return: true or false, whether this = peer.
- *
- */
+
 bool Peer::operator==(const Peer &peer) const {
 	return this->mac_addr == peer.mac_addr;
 }
+
 
 string Peer::getMacAddr() const {
 	return this->mac_addr;
 }
 
+
 string Peer::getName() const {
 	return this->name;
 }
+
 
 void Peer::setName(string name) {
 	this->name = name;
 }
 
-/**
- * TODO (Deletion when never being used)
- */
-bool Peer::setMacAddr(string mac) {
-	if (this->validMacAddr(mac)) {
-		this->mac_addr = mac;
-		return true;
-	} else {
-		return false;
-	}
-}
-
-
-/**
- * ATTENTION! Method is erroneous!!
- * This method is called by setMacAddr(), which in turn is no more used, so far.
- * ATTENTION! Method is erroneous!!
- *
- * TODO (Fixing and testing or deletion.)
- *
- */
-bool Peer::validMacAddr(string mac) {
-	bool ret = true;
-	int x = mac.length();
-	cout << "mac: " << mac << "; mac_len: " << x << endl;
-	if (mac.length() == 17) {
-		for (int i=0; i<17; i++) {
-			cout << "LOOP: " << (char) mac[i] << (int) mac[i] << endl;
-			int s = mac[i];
-			if (i == 2 || i == 5 || i == 8 || i == 11 || i == 14) {
-				if (s != 58){
-					cout << "INNERPART_KOTZ_i:" << (int) mac[i] << (char) mac[i] << i << endl;
-					return false;
-				}
-			} else {
-				cout << s << endl;
-				if ((48 <= s <= 57) || (65 <= s <= 70) || (97 <= s <= 102)) {
-					cout << "INNERPART" << endl;
-					continue;
-				}
-				else {
-					cout << "RAUS" << endl;
-					return false;
-					}
-			}
-		}
-		return true;
-	} else {
-		return false;
-	}
-	return false;
-}
 
 } /* namespace wifip2p */
