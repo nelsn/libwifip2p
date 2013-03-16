@@ -21,6 +21,18 @@ public:
 
 	string getName() const;
 
+	/**
+	 * Matches the actual nic against the input parameter
+	 * 	nic, which is a object-reference.
+	 * Equality is defined as matching interface names.
+	 *
+	 * @nic:   The nic object to be tested for equality.
+	 * Return: True, whether both of the NetworkIntf objects'
+	 * 			names are equal or not.
+	 *
+	 */
+	bool operator==(const NetworkIntf &nic) const;
+
 private:
 	string name;
 };

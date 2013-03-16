@@ -24,4 +24,9 @@ string NetworkIntf::getName() const {
 	return this->name;
 }
 
+
+bool NetworkIntf::operator==(const NetworkIntf &nic) const {
+	return this->getName() == nic.getName();
+}
+
 } /* namespace wifip2p */

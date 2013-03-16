@@ -143,7 +143,7 @@ void CoreEngine::disconnect(wifip2p::NetworkIntf nic) {
 	list<Connection>::iterator conn_it = connections.begin();
 
 	for (; conn_it != connections.end(); ++conn_it) {
-		if (conn_it->getNetworkIntf().getName() == nic.getName()) {
+		if (conn_it->getNetworkIntf() == nic) {
 			disconnect(*conn_it);
 		}
 	}
