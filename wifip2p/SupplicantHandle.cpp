@@ -454,7 +454,7 @@ namespace wifip2p {
 								requestService(*peer_it, *it, sdreq_id);
 						}
 					} else {
-						peers.push_back(*peer_it);
+						peers.push_back(p);
 					}
 
 					// cout << "[RECEIVED_SERVICE_REQUEST] << EVENT" << endl;
