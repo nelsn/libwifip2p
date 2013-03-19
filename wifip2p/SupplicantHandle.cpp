@@ -390,7 +390,32 @@ namespace wifip2p {
 
 					Peer p(msg.at(2));
 
-					list<Peer>::const_iterator peer_it = find(peers.begin(),
+					//-----------------------------------------------
+					cout << "__manual_DEBUG>>" << endl;
+
+					vector<string>::const_iterator m_it = msg.begin();
+					int l=0;
+
+					for (; m_it != msg.end(); ++m_it) {
+						cout << "  msg.at(" << l << ") := " << msg.at(l) << endl;
+						++l;
+					}
+
+					l = 0;
+					cout << "--------//" << endl;
+
+					list<Peer>::const_iterator p_it = peers.begin();
+
+					for (; p_it != peers.end(); ++ p_it) {
+						cout << "  peer_" << l << " in list peers := ("
+								<< p_it->getMacAddr() << ", " << p_it->getName() << ")" << endl;
+						++l;
+					}
+
+					cout << "<<manual_DEBUG__" << endl;
+					//-----------------------------------------------
+
+					const list<Peer>::const_iterator peer_it = find(peers.begin(),
 																peers.end(), p);
 
 //					cout << "Peer is: " << p.getMacAddr() << "; request is: "

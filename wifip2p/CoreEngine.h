@@ -154,7 +154,6 @@ private:
 
 	int pipe_fds[2];
 
-	list<Peer> peers;
 	list<Connection> connections;
 
 	WifiP2PInterface &ext_if;

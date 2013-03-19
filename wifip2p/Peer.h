@@ -36,9 +36,9 @@ private:
 class Peer {
 
 public:
-	Peer();
-	Peer(string mac);
-	Peer(string mac, string name);
+	//Peer();
+	Peer(const string &mac);
+	Peer(const string &mac, const string &name);
 	virtual ~Peer();
 
 	string getMacAddr() const;

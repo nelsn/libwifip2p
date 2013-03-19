@@ -10,7 +10,7 @@
 namespace wifip2p {
 
 Connection::Connection(NetworkIntf nic)
-	: nic(nic) {
+	: peer(""), nic(nic) {
 
 }
 

@@ -46,6 +46,8 @@ void CoreEngine::run() {
 	wpamon.open(this->ctrl_path.c_str());
 	wpasup.init(this->name, this->services);
 
+	list<Peer> peers;
+
 	running = true;
 
 	while (running) {

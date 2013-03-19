@@ -13,16 +13,16 @@ using namespace std;
 
 namespace wifip2p {
 
-Peer::Peer() {
-	;
+//Peer::Peer() {
+//	;
+//}
+
+Peer::Peer(const string &mac)
+	: mac_addr(mac), name("") {
+
 }
 
-Peer::Peer(string mac)
-	: mac_addr(mac) {
-
-}
-
-Peer::Peer(string mac, string name)
+Peer::Peer(const string &mac, const string &name)
 	: mac_addr(mac),
 	  name(name) {
 
