@@ -29,6 +29,18 @@ public:
 	virtual void peerFound(Peer peer) = 0;
 
 	/**
+	 * Hands out any peer object, no matter whether fully discovered or not,
+	 *  to the respective interface implementation.
+	 *  In turn, the concrete implementation becomes responsible for all
+	 *  connections which may requested to being set up from other stations.
+	 *
+	 * @peer: Peer, obviously interested in a holding a P2P connection to this
+	 * 		   local station.
+	 *
+	 */
+	virtual void connectionRequest(Peer peer) = 0;
+
+	/**
 	 * If libwifip2p may successfully establish a P2P connection, this connection will
 	 *  be handed out for being externally managed.
 	 *
