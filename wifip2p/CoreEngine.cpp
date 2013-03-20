@@ -58,9 +58,7 @@ void CoreEngine::run() {
 
 			cout << "[ENTERED_STATE := IDLE_STATE]" << endl;
 
-			if (triggeredEvents(wpamon, st_idle_time, ST_SCAN)) {
-				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
-			}
+			triggeredEvents(wpamon, peers, st_idle_time, ST_SCAN);
 
 			break;
 		}
@@ -71,9 +69,7 @@ void CoreEngine::run() {
 
 			wpasup.findPeers();
 
-			if (triggeredEvents(wpamon, st_scan_time, ST_SCAN)) {
-				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
-			}
+			triggeredEvents(wpamon, peers, st_scan_time, ST_SCAN);
 
 			wpasup.findPeersStop();
 
@@ -96,11 +92,7 @@ void CoreEngine::run() {
 
 			wpasup.findPeers();
 
-			while(triggeredEvents(wpamon, st_sreq_time, ST_SREQ)) {
-
-				wpamon.listen(peers, connections, services, sdreq_id, ext_if);
-
-			}
+			triggeredEvents(wpamon, peers, st_sreq_time, ST_SREQ);
 
 			set<string>::iterator jt = sdreq_id.begin();
 			for (; jt != sdreq_id.end(); ++jt)
@@ -188,12 +180,12 @@ void CoreEngine::reinitialize(string ctrl_path, list<string> services) throw (Co
 }
 
 
-bool CoreEngine::triggeredEvents(const SupplicantHandle &wpa, int seconds, state next) {
+void CoreEngine::triggeredEvents(const SupplicantHandle &wpa, list<Peer> &peers, int seconds, state next) {
 
 	fd_set fds;
 	int wpa_fd = wpa.getFD();
 
-	if (wpa_fd <= 0) return false;
+	if (wpa_fd <= 0) return;
 
 	FD_ZERO(&fds);
 	FD_SET(wpa_fd, &fds);
@@ -209,13 +201,19 @@ bool CoreEngine::triggeredEvents(const SupplicantHandle &wpa, int seconds, state
 		high_fd = pipe_fds[0];
 	}
 
-	int res = ::select(high_fd + 1, &fds, NULL, NULL, &tv);
+	while (::select(high_fd + 1, &fds, NULL, NULL, &tv) != 0)
+	{
+		if (FD_ISSET(wpa_fd, &fds)) {
+			wpamon.listen(peers, connections, services, sdreq_id, ext_if);
+		}
 
-	if (res == 0) {
-		actual_state = next;
+		if (FD_ISSET(pipe_fds[0], &fds)) break;
+
+		FD_SET(wpa_fd, &fds);
+		FD_SET(pipe_fds[0], &fds);
 	}
 
-	return FD_ISSET(wpa_fd, &fds);
+	actual_state = next;
 }
 
 

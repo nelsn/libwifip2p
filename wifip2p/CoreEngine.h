@@ -174,7 +174,7 @@ private:
 	 * @next:	 The next CoreEngine state to be entered after leaving ::select.
 	 *
 	 */
-	bool triggeredEvents(const SupplicantHandle &wpa, int seconds, state next);
+	void triggeredEvents(const SupplicantHandle &wpa, list<Peer> &peers, int seconds, state next);
 
 };
 
