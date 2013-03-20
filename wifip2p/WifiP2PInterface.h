@@ -29,10 +29,9 @@ public:
 	virtual void peerFound(Peer peer) = 0;
 
 	/**
-	 * Hands out any peer object, no matter whether fully discovered or not,
-	 *  to the respective interface implementation.
-	 *  In turn, the concrete implementation becomes responsible for all
-	 *  connections which may requested to being set up from other stations.
+	 * Hands out a fully discovered peer object to the respective interface
+	 *  implementation. In turn, the concrete implementation becomes responsible
+	 *  for checking back if a p2p group to this peer is already created or not.
 	 *
 	 * @peer: Peer, obviously interested in a holding a P2P connection to this
 	 * 		   local station.

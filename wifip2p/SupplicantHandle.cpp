@@ -333,8 +333,9 @@ namespace wifip2p {
 				 *
 				 * That is a connection request.
 				 * Checks whether requesting peer is fully discovered
-				 *  or not. If so, the the connect command will automatically
-				 *  be called at wpa_s. Else if, ext_if will be called.
+				 *  or not. If so, the specific fully discovered peer will
+				 *  be handed out. Else, the non-fully discovered peer
+				 *  temp_p will be handed out to ext_if.
 				 *
 				 */
 				if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
@@ -354,7 +355,6 @@ namespace wifip2p {
 
 							for (; conn_it != connections.end(); ++conn_it) {
 								if (conn_it->getPeer() == *peer_it) {
-									cout << "peer already connected" << endl;
 									contained = true;
 									break;
 								} else {
@@ -362,20 +362,17 @@ namespace wifip2p {
 								}
 							}
 
-							cout << "peer is in connections? " << contained << endl;
 							//peer is not already connected
 							if (!contained)
-								connectToPeer(*peer_it);
+								ext_if.connectionRequest(*peer_it);
 
 						// hand over to ext_if for being checked externally >>
 						} else {
-							// TODO in case ext_if should be bothered
-							//ext_if.peerFound(*peer_it);
+							ext_if.connectionRequest(temp_p);
 						}
 					// hand over to ext_if for being checked externally >>
 					} else {
-						// TODO in case ext_if should be bothered
-						// ext_if.peerFound(*peer_it);
+						ext_if.connectionRequest(temp_p);
 					}
 
 					//cout << "[GROUP_NEG_REQUEST] << EVENT" << endl;
