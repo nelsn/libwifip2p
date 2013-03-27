@@ -82,11 +82,25 @@ void CoreEngine::run() {
 			wpasup.findPeersStop();
 
 			if (!peers.empty()) {
-				// TODO
-				// Iterate over peers, is there any not fully discovered?
-				//   set actual_state = ST_SREQ
-				// else  actual_state = ST_IDLE
-				actual_state = ST_SREQ;
+
+				list<Peer>::iterator peer_it = peers.begin();
+				bool all_known = true;
+
+				for (; peer_it != peers.end(); ++peer_it) {
+					if (peer_it->getName() == "") {
+						all_known = false;
+						break;
+					} else {
+						continue;
+					}
+				}
+
+				if (all_known) {
+					actual_state = ST_IDLE;
+				} else {
+					actual_state = ST_SREQ;
+				}
+
 			} else {
 				actual_state = ST_IDLE;
 			}
