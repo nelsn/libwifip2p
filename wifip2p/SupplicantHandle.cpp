@@ -441,9 +441,7 @@ namespace wifip2p {
 								for (; serv_it != services.end(); ++serv_it) {
 									// one locally registered/own service requested >>
 									if (matchingService(*serv_it, req)) {
-										// TODO
-										// Do NEVER connect automatically from within libwifi!!
- 										this->connectToPeer(*peer_it);
+ 										ext_if.peerFound(*peer_it);
 									}
 								}
 							}
