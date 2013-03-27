@@ -387,6 +387,7 @@ namespace wifip2p {
 
 					Peer p(msg.at(2));
 
+					// TODO uncomment all this!
 					//-----------------------------------------------
 					cout << "__manual_DEBUG>>" << endl;
 
@@ -440,6 +441,8 @@ namespace wifip2p {
 								for (; serv_it != services.end(); ++serv_it) {
 									// one locally registered/own service requested >>
 									if (matchingService(*serv_it, req)) {
+										// TODO
+										// Do NEVER connect automatically from within libwifi!!
  										this->connectToPeer(*peer_it);
 									}
 								}

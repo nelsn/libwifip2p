@@ -38,6 +38,14 @@ void CoreEngine::stop() {
 	running = false;
 	char buf[1] = { '\0' };
 	::write(pipe_fds[1], buf, 1);
+
+	try {
+		wpasup.flushServices();
+	} catch (SupplicantHandleException &ex) {
+		cerr << "Services could not have been unregistered due to some "
+				"exception raised: " << ex.what() << endl;
+	}
+
 }
 
 
@@ -74,6 +82,10 @@ void CoreEngine::run() {
 			wpasup.findPeersStop();
 
 			if (!peers.empty()) {
+				// TODO
+				// Iterate over peers, is there any not fully discovered?
+				//   set actual_state = ST_SREQ
+				// else  actual_state = ST_IDLE
 				actual_state = ST_SREQ;
 			} else {
 				actual_state = ST_IDLE;
@@ -116,6 +128,8 @@ void CoreEngine::run() {
 
 void CoreEngine::connect(wifip2p::Peer peer) {
 
+	// TODO
+	// Rearrange try-catch. Write any catch exception to ::cerr
 //	try {
 		wpasup.connectToPeer(peer);
 //

@@ -209,6 +209,12 @@ public:
 	void disconnect(Connection conn) throw (SupplicantHandleException);
 
 	/**
+	 * Unregisters all services from running wpa_s.
+	 *
+	 */
+	bool flushServices() throw (SupplicantHandleException);
+
+	/**
 	 * Enables to get the file descriptor which may help in reporting whether
 	 * 	event messages are locally available or not.
 	 * 	The respective wpa_s is required to be in monitor_mode.
@@ -245,7 +251,6 @@ private:
 	 *
 	 */
 	bool setDeviceName(string name) throw (SupplicantHandleException);
-	bool flushServices() throw (SupplicantHandleException);
 
 	/**
 	 * Registers a service at the local wpa_s. By convention, this library
