@@ -142,14 +142,14 @@ void CoreEngine::run() {
 
 void CoreEngine::connect(wifip2p::Peer peer) {
 
-	// TODO
-	// Rearrange try-catch. Write any catch exception to ::cerr
-//	try {
+	try {
 		wpasup.connectToPeer(peer);
-//
-//	} catch (SupplicantHandleException &ex) {
-//
-//	}
+	} catch (SupplicantHandleException &ex) {
+		cerr << "Unable to connect to peer ("
+				<< peer.getMacAddr()
+				<< "; " << peer.getName() << ") due to some "
+				<< "exception raised: " << ex.what() << endl;
+	}
 
 }
 
