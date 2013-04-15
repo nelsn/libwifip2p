@@ -38,14 +38,6 @@ void CoreEngine::stop() {
 	running = false;
 	char buf[1] = { '\0' };
 	::write(pipe_fds[1], buf, 1);
-
-	try {
-		wpasup.flushServices();
-	} catch (SupplicantHandleException &ex) {
-		cerr << "Services could not have been unregistered due to some "
-				"exception raised: " << ex.what() << endl;
-	}
-
 }
 
 
@@ -136,6 +128,13 @@ void CoreEngine::run() {
 			break;
 
 		}
+	}
+
+	try {
+		wpasup.flushServices();
+	} catch (SupplicantHandleException &ex) {
+		cerr << "Services could not have been unregistered due to some "
+				"exception raised: " << ex.what() << endl;
 	}
 }
 
