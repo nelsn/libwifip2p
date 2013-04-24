@@ -7,14 +7,6 @@
 # create m4 directory
 mkdir -p m4
 
-echo "## run libtoolize ##"
-libtoolize --force
-
-echo "## run aclocal ##"
-aclocal
-
-echo "## run automake ##"
-automake --add-missing
-
+# run autotools
 autoreconf -i
 
