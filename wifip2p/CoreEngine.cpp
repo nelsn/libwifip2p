@@ -13,15 +13,18 @@ using namespace std;
 
 namespace wifip2p {
 
-CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if)
-		: wpasup(false),
-		  wpamon(true),
+const std::string CoreEngine::TAG = "CoreEngine";
+
+CoreEngine::CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if, Logger &logger)
+		: wpasup(false, logger),
+		  wpamon(true, logger),
 		  actual_state(ST_IDLE),
 		  st_idle_time(10),
 		  st_scan_time(10),
 		  st_sreq_time(20),
 		  running(false),
 		  ext_if(ext_if),
+		  logger(logger),
 		  name(name),
 		  ctrl_path(ctrl_path) {
 
@@ -56,7 +59,7 @@ void CoreEngine::run() {
 
 		case ST_IDLE: {
 
-			cout << "[ENTERED_STATE := IDLE_STATE]" << endl;
+			logger.log_debug(40, TAG, "[ENTERED_STATE := IDLE_STATE]");
 
 			triggeredEvents(wpamon, peers, st_idle_time, ST_SCAN);
 
@@ -65,7 +68,7 @@ void CoreEngine::run() {
 
 		case ST_SCAN: {
 
-			cout << "[ENTERED_STATE := SCAN_STATE]" << endl;
+			logger.log_debug(40, TAG, "[ENTERED_STATE := SCAN_STATE]");
 
 			wpasup.findPeers();
 
@@ -102,7 +105,7 @@ void CoreEngine::run() {
 
 		case ST_SREQ: {
 
-			cout << "[ENTERED_STATE := SD_REQUEST_STATE]" << endl;
+			logger.log_debug(40, TAG, "[ENTERED_STATE := SD_REQUEST_STATE]");
 
 			list<string>::iterator it = services.begin();
 			for (; it != services.end(); ++it)
@@ -133,8 +136,7 @@ void CoreEngine::run() {
 	try {
 		wpasup.flushServices();
 	} catch (SupplicantHandleException &ex) {
-		cerr << "Services could not have been unregistered due to some "
-				"exception raised: " << ex.what() << endl;
+		logger.log_err(TAG, "Services could not have been unregistered due to some exception raised: " + ex.what());
 	}
 }
 
@@ -144,10 +146,8 @@ void CoreEngine::connect(wifip2p::Peer peer) {
 	try {
 		wpasup.connectToPeer(peer);
 	} catch (SupplicantHandleException &ex) {
-		cerr << "Unable to connect to peer ("
-				<< peer.getMacAddr()
-				<< "; " << peer.getName() << ") due to some "
-				<< "exception raised: " << ex.what() << endl;
+		logger.log_err(TAG, "Unable to connect to peer (" + peer.getMacAddr()
+				+ "; " + peer.getName() + ") due to some exception raised: " + ex.what());
 	}
 
 }

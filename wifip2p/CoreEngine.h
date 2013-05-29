@@ -17,6 +17,7 @@
 #include "wifip2p/Connection.h"
 #include "wifip2p/Peer.h"
 #include "wifip2p/NetworkIntf.h"
+#include "wifip2p/Logger.h"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ public:
 	 * 				backs from SupplicantHandle objects.
 	 *
 	 */
-	CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if);
+	CoreEngine(string ctrl_path, string name, WifiP2PInterface &ext_if, Logger &logger);
 
 	virtual ~CoreEngine();
 
@@ -140,6 +141,8 @@ public:
 
 
 private:
+	static const std::string TAG;
+
 	string ctrl_path;
 	string name;
 	list<string> services;
@@ -157,7 +160,7 @@ private:
 	list<Connection> connections;
 
 	WifiP2PInterface &ext_if;
-
+	Logger &logger;
 
 	void initialize() throw (CoreEngineException);
 

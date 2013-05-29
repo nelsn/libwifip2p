@@ -17,13 +17,16 @@ using namespace std;
 
 namespace wifip2p {
 
+	const std::string SupplicantHandle::TAG = "SupplicantHandle";
+
 	const string SERVDISC_TYPE = "upnp";
 	const string SERVDISC_VERS = "10";
 	const string BROADCAST = "00:00:00:00:00:00";
 
-	SupplicantHandle::SupplicantHandle(bool monitor)
+	SupplicantHandle::SupplicantHandle(bool monitor, Logger &logger)
 		: _handle(NULL),
-		  monitor_mode(monitor) {
+		  monitor_mode(monitor),
+		  _logger(logger) {
 
 	}
 
@@ -42,13 +45,13 @@ namespace wifip2p {
 		if (_handle != NULL) {
 			if (this->monitor_mode) {
 				if (this->setMonitorMode())
-					cout << "WPASUP is now being monitored." << endl;
+					_logger.log_debug(40, TAG, "WPASUP is now being monitored.");
 				else {
 					monitor_mode = false;
 					throw SupplicantHandleException("Failed to set monitor mode.");
 				}
 			} else
-				cout << "Connection to WPASUP established." << endl;
+				_logger.log_debug(40, TAG, "Connection to WPASUP established.");
 		} else {
 			throw SupplicantHandleException("Connection to WPASUP failed.");
 		}
@@ -158,7 +161,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_DEVICE_FOUND) {
 
-					cout << "EVENT >> [DEVICE_FOUND]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [DEVICE_FOUND]");
 
 					/* With msg.at(1) one may get the MAC immediately, but this
 					 *  place especially not stores the hardware interface's MAC,
@@ -176,7 +179,7 @@ namespace wifip2p {
 
 					if (peer_it == peers.end()) {
 						peers.push_back(p);
-//						cout << "Peer pushed back at peers, as yet not contained" << endl;
+						_logger.log_debug(50, TAG, "Peer pushed back at peers, as yet not contained");
 					} else {
 						//Check: p in list? Then peer_it ~ p in list
 					    if (peer_it->getName() != "") {
@@ -185,12 +188,12 @@ namespace wifip2p {
 					         * 	=> call back ext_if with *peer_it
 					         * 		dereferenced
 					         */
-//					    	cout << "call back ext_if with fully discovered peer" << endl;
+					    	_logger.log_debug(50, TAG, "call back ext_if with fully discovered peer");
 					        ext_if.peerFound(*peer_it);
 					    }
 					}
 
-					// cout << "[DEVICE_FOUND] << EVENT" << endl;
+					_logger.log_debug(40, TAG, "[DEVICE_FOUND] << EVENT");
 				}
 
 				/* EVENT >> [GROUP_STARTED]
@@ -204,7 +207,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_GROUP_STARTED) {
 
-					cout << "EVENT >> [GROUP_STARTED]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [GROUP_STARTED]");
 
 					//local device is supposed being group owner >>
 					if (msg.at(2) == "GO") {
@@ -232,7 +235,7 @@ namespace wifip2p {
 						}
 					}
 
-					// cout << "[GROUP_STARTED] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[GROUP_STARTED] << EVENT");
 				}
 
 				/* EVENT >> [AP_STA_CONNECTED]
@@ -252,21 +255,20 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == AP_STA_CONNECTED) {
 
-					cout << "EVENT >> [AP_STA_CONNECTED]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [AP_STA_CONNECTED]");
 
 					Peer connected_peer(msg.at(2).substr(13));
-//					cout << "The connection-peer should be " << connected_peer.getMacAddr() << endl;
+					_logger.log_debug(50, TAG, "The connection-peer should be " + connected_peer.getMacAddr());
 					list<Peer>::const_iterator peer_it =
 							find(peers.begin(), peers.end(), connected_peer);
-//					cout << "The connection-peer is " << peer_it->getMacAddr() << "; "
-//							<< peer_it->getName() << endl;
+					_logger.log_debug(60, TAG, "The connection-peer is " + peer_it->getMacAddr() + "; " + peer_it->getName());
 
 					if (peer_it != peers.end()) {
 						connections.front().setPeer(*peer_it);
 						ext_if.connectionEstablished(connections.front());
 					}
 
-					// cout << "[AP_STA_CONNECTED] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[AP_STA_CONNECTED] << EVENT");
 				}
 
 
@@ -284,7 +286,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == AP_STA_DISCONNECTED) {
 
-					cout << "EVENT >> [AP_STA_DISCONNECTED]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [AP_STA_DISCONNECTED]");
 
 					string mac_lost = msg.at(2).substr(13);
 
@@ -299,7 +301,7 @@ namespace wifip2p {
 						}
 					}
 
-					// cout << "[AP_STA_DISCONNECTED] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[AP_STA_DISCONNECTED] << EVENT");
 				}
 
 				/* EVENT >> [GROUP_REMOVED]
@@ -311,7 +313,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_GROUP_REMOVED) {
 
-					cout << "EVENT >> [GROUP_REMOVED]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [GROUP_REMOVED]");
 
 					list<Connection>::iterator it = connections.begin();
 
@@ -326,7 +328,7 @@ namespace wifip2p {
 					}
 
 
-					// cout << "[GROUP_REMOVED] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[GROUP_REMOVED] << EVENT");
 				}
 
 				/* EVENT >> [GROUP_NEG_REQUEST]
@@ -340,7 +342,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_GO_NEG_REQUEST) {
 
-					cout << "EVENT >> [GROUP_NEG_REQUEST]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [GROUP_NEG_REQUEST]");
 
 					Peer temp_p(msg.at(1));
 					list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), temp_p);
@@ -375,7 +377,7 @@ namespace wifip2p {
 						ext_if.connectionRequest(temp_p);
 					}
 
-					//cout << "[GROUP_NEG_REQUEST] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[GROUP_NEG_REQUEST] << EVENT");
 				}
 
 				/* EVENT >> [SERVICE_REQUEST_RECEIVED]
@@ -383,59 +385,28 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_REQ) {
 
-					cout << "EVENT >> [RECEIVED_SERVICE_REQUEST]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [RECEIVED_SERVICE_REQUEST]");
 
 					Peer p(msg.at(2));
 
-					// TODO uncomment all this!
-					//-----------------------------------------------
-					cout << "__manual_DEBUG>>" << endl;
-
-					vector<string>::const_iterator m_it = msg.begin();
-					int l=0;
-
-					for (; m_it != msg.end(); ++m_it) {
-						cout << "  msg.at(" << l << ") := " << msg.at(l) << endl;
-						++l;
-					}
-
-					l = 0;
-					cout << "--------//" << endl;
-
-					list<Peer>::const_iterator p_it = peers.begin();
-
-					for (; p_it != peers.end(); ++ p_it) {
-						cout << "  peer_" << l << " in list peers := ("
-								<< p_it->getMacAddr() << ", " << p_it->getName() << ")" << endl;
-						++l;
-					}
-
-					cout << "<<manual_DEBUG__" << endl;
-					//-----------------------------------------------
-
-					const list<Peer>::const_iterator peer_it = find(peers.begin(),
-																peers.end(), p);
-
-//					cout << "Peer is: " << p.getMacAddr() << "; request is: "
-//							<< msg.at(5) << "; request_len equals " << msg.at(5).size()
-//							<< endl;
+					const list<Peer>::const_iterator peer_it = find(peers.begin(), peers.end(), p);
 
 					// peer is already contained in peers >>
 					if (peer_it != peers.end()) {
-//						cout << "peer is already contained in peers >>" << endl;
+						_logger.log_debug(45, TAG, "peer is already contained in peers >>");
 						// peer is fully discovered >>
 						if (peer_it->getName() != "") {
-//							cout << "peer is fully discovered >>" << endl;
+							_logger.log_debug(45, TAG, "peer is fully discovered >>");
 							// prüfe: ist der angefragte service teil meiner eigenen gelisteten services?
 
 							// service request likely to contain a proper request
 							if (msg.at(5).size() > 10) {
 
 								string frag_tlv(msg.at(5).substr(10));
-//								cout << "TLV data fragment: " << frag_tlv << endl;
+								_logger.log_debug(45, TAG, "TLV data fragment: " + frag_tlv);
 
 								string req(getStringFromHexTLV(frag_tlv));
-//								cout << "Requested Service Data from TLV: " << req << endl;
+								_logger.log_debug(45, TAG, "Requested Service Data from TLV: " + req);
 
 								list<string>::iterator serv_it = services.begin();
 								for (; serv_it != services.end(); ++serv_it) {
@@ -455,7 +426,7 @@ namespace wifip2p {
 						peers.push_back(p);
 					}
 
-					// cout << "[RECEIVED_SERVICE_REQUEST] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[RECEIVED_SERVICE_REQUEST] << EVENT");
 				}
 
 				/* EVENT >> [SERVICE_RESPONSE_RECEIVED]
@@ -473,7 +444,7 @@ namespace wifip2p {
 				 */
 				if (msg.at(0) == P2P_EVENT_SERV_DISC_RESP) {
 
-					cout << "EVENT >> [RECEIVED_SERVICE_RESPONSE]" << endl;
+					_logger.log_debug(40, TAG, "EVENT >> [RECEIVED_SERVICE_RESPONSE]");
 
 					// non-empty service response received >>
 					if (msg.at(3) != "0300020101" && msg.at(3) != "0300020102") {
@@ -514,10 +485,7 @@ namespace wifip2p {
 									if (pos < tlv.length()) {
 										name = tlv.substr(pos+1);
 									} else {
-										cerr << ">> RECEIVED_SERVICE_RESPONSE: "
-												<< "No conventionally-confirm DeviceName!"
-												<< endl << "      TLV:" << tlv
-												<< endl << "      MSG:" << msg.at(3).substr(12) << endl;
+										_logger.log_err(TAG, ">> RECEIVED_SERVICE_RESPONSE: No conventionally-confirm DeviceName!");
 									}
 
 									if (name != "") {
@@ -525,10 +493,7 @@ namespace wifip2p {
 										//peers.push_back(p);
 										ext_if.peerFound(peer);
 									} else {
-										cerr << ">> RECEIVED_SERVICE_RESPONSE: "
-												<< "No conventionally-confirm DeviceName!"
-												<< endl << "      TLV:" << tlv
-												<< endl << "      MSG:" << msg.at(3).substr(12) << endl;
+										_logger.log_err(TAG, ">> RECEIVED_SERVICE_RESPONSE: No conventionally-confirm DeviceName!");
 									}
 								}
 							}
@@ -547,16 +512,13 @@ namespace wifip2p {
 									peers.push_back(p);
 									ext_if.peerFound(p);
 								} else {
-									cerr << ">> RECEIVED_SERVICE_RESPONSE: "
-											<< "No conventionally-confirm DeviceName!"
-											<< endl << "      supposed_name:" << name
-											<< endl << "      MSG:" << msg.at(3).substr(12) << endl;
+									_logger.log_err(TAG, ">> RECEIVED_SERVICE_RESPONSE: No conventionally-confirm DeviceName!");
 								}
 							}
 						}
 					}
 
-					// cout << "[RECEIVED_SERVICE_RESPONSE] << EVENT" << endl;
+					_logger.log_debug(45, TAG, "[RECEIVED_SERVICE_RESPONSE] << EVENT");
 				}
 			}
 		} else {
@@ -599,10 +561,8 @@ namespace wifip2p {
 
 	void SupplicantHandle::requestServiceCancel(string sdreq_id) throw (SupplicantHandleException) {
 		try {
-			//string *fb;
-			//cout << "ServiceRquest_ID : " << sdreq_id << endl;
+			_logger.log_debug(45, TAG, "ServiceRquest_ID : " + sdreq_id);
 			this->p2pCommand("P2P_SERV_DISC_CANCEL_REQ " + sdreq_id, NULL);
-			//cout << "reqServCancel feedback : " << &fb << endl;
 		} catch (SupplicantHandleException &ex) {
 			throw SupplicantHandleException(ex.what());
 		}
@@ -640,15 +600,6 @@ namespace wifip2p {
 			throw SupplicantHandleException("wpa_s ctrl_i/f; send or receive failed.");
 		if (ret == -2)
 			throw SupplicantHandleException("wpa_s ctrl_i/f; communication timed out.");
-
-		/* May be uncommented for testing purposes. Enables getting
-		 * 	insight into actual command and variable statuses, which else
-		 * 	would have been hidden by flying exceptions, in case of
-		 * 	errors.
-		 *
-		 */
-		//cout << cmd << endl;
-		//cout << "reply_buf: " << &reply_buf[0] << endl;
 
 		string reply(&reply_buf[0], buf_len);
 
@@ -718,8 +669,6 @@ namespace wifip2p {
 
 	string SupplicantHandle::getStringFromHexTLV(string tlv) {
 
-//		cout << "TLV  : " << tlv << endl;
-
 		string result;
 
 		bool x = true;
@@ -729,20 +678,15 @@ namespace wifip2p {
 
 			if (x) {
 				secnd = hexlookup(tlv[i]) * 16;
-				//cout << "The second " << secnd << endl;
 				x = !x;
 			} else {
 				first = hexlookup(tlv[i]);
-				//cout << "The first " << first << endl;
 				x = !x;
 
 				int want = secnd + first;
-//				cout << (char) want;
 				result.push_back((char) want);
 			}
 		}
-
-//		cout << endl;
 
 		return result;
 	}
