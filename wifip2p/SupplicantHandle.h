@@ -19,6 +19,7 @@
 #include "wifip2p/Peer.h"
 #include "wifip2p/Connection.h"
 #include "wifip2p/WifiP2PInterface.h"
+#include "wifip2p/Logger.h"
 
 using namespace std;
 
@@ -45,7 +46,7 @@ private:
 class SupplicantHandle {
 
 public:
-	SupplicantHandle(bool monitor);
+	SupplicantHandle(bool monitor, Logger &logger);
 	virtual ~SupplicantHandle();
 
 	/**
@@ -227,7 +228,10 @@ public:
 
 
 private:
+	static const std::string TAG;
+
 	bool monitor_mode;
+	Logger &_logger;
 	void *_handle;
 
 
